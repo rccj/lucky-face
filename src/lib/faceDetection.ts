@@ -61,38 +61,38 @@ export async function detectFaces(imageElement: HTMLImageElement): Promise<Detec
   // 預處理圖像以提高偵測效果
   const preprocessedCanvas = preprocessImage(imageElement);
   
-  // 嘗試多種偵測方法和參數
+  // 嘗試多種偵測方法和參數，提高精準度
   const detectionMethods = [
-    // 方法 1: SSD MobileNet (更準確，適合群體照片) - 原始圖像
+    // 方法 1: SSD MobileNet (最高信心度) - 原始圖像
     () => faceapi.detectAllFaces(
       imageElement,
-      new faceapi.SsdMobilenetv1Options({ minConfidence: 0.2 })
+      new faceapi.SsdMobilenetv1Options({ minConfidence: 0.5 })
     ),
-    // 方法 2: SSD MobileNet - 預處理圖像
+    // 方法 2: SSD MobileNet (中等信心度) - 原始圖像
+    () => faceapi.detectAllFaces(
+      imageElement,
+      new faceapi.SsdMobilenetv1Options({ minConfidence: 0.4 })
+    ),
+    // 方法 3: SSD MobileNet (較低信心度) - 預處理圖像
     () => faceapi.detectAllFaces(
       preprocessedCanvas,
-      new faceapi.SsdMobilenetv1Options({ minConfidence: 0.2 })
+      new faceapi.SsdMobilenetv1Options({ minConfidence: 0.3 })
     ),
-    // 方法 3: Tiny Face Detector (更快速，較低閾值) - 原始圖像
+    // 方法 4: Tiny Face Detector (高精度設定) - 原始圖像
     () => faceapi.detectAllFaces(
       imageElement,
+      new faceapi.TinyFaceDetectorOptions({
+        inputSize: 608,
+        scoreThreshold: 0.4
+      })
+    ),
+    // 方法 5: Tiny Face Detector (標準設定) - 預處理圖像
+    () => faceapi.detectAllFaces(
+      preprocessedCanvas,
       new faceapi.TinyFaceDetectorOptions({
         inputSize: 512,
-        scoreThreshold: 0.2
+        scoreThreshold: 0.35
       })
-    ),
-    // 方法 4: Tiny Face Detector - 預處理圖像
-    () => faceapi.detectAllFaces(
-      preprocessedCanvas,
-      new faceapi.TinyFaceDetectorOptions({
-        inputSize: 416,
-        scoreThreshold: 0.3
-      })
-    ),
-    // 方法 5: Tiny Face Detector (預設參數)
-    () => faceapi.detectAllFaces(
-      imageElement,
-      new faceapi.TinyFaceDetectorOptions()
     )
   ];
 
@@ -121,9 +121,12 @@ export async function detectFaces(imageElement: HTMLImageElement): Promise<Detec
     }
   }
   
-  console.log(`Final detection result: ${bestDetections.length} faces found`);
+  // 去除重複的人臉檢測（基於位置相似度）
+  const filteredDetections = removeDuplicateDetections(bestDetections);
   
-  return bestDetections.map((detection, index) => ({
+  console.log(`Final detection result: ${filteredDetections.length} faces found (${bestDetections.length - filteredDetections.length} duplicates removed)`);
+  
+  return filteredDetections.map((detection, index) => ({
     id: `face-${index}`,
     box: {
       x: detection.box.x,
@@ -133,6 +136,43 @@ export async function detectFaces(imageElement: HTMLImageElement): Promise<Detec
     },
     detection,
   }));
+}
+
+// 去除重複的人臉檢測
+function removeDuplicateDetections(detections: faceapi.FaceDetection[]): faceapi.FaceDetection[] {
+  const filtered: faceapi.FaceDetection[] = [];
+  
+  for (const detection of detections) {
+    const isDuplicate = filtered.some(existing => {
+      // 計算兩個檢測框的重疊度
+      const overlap = calculateOverlap(detection.box, existing.box);
+      // 如果重疊度超過50%，視為相同人臉
+      return overlap > 0.5;
+    });
+    
+    if (!isDuplicate) {
+      filtered.push(detection);
+    }
+  }
+  
+  return filtered;
+}
+
+// 計算兩個矩形的重疊比例
+function calculateOverlap(box1: faceapi.Box, box2: faceapi.Box): number {
+  const x1 = Math.max(box1.x, box2.x);
+  const y1 = Math.max(box1.y, box2.y);
+  const x2 = Math.min(box1.x + box1.width, box2.x + box2.width);
+  const y2 = Math.min(box1.y + box1.height, box2.y + box2.height);
+  
+  if (x2 <= x1 || y2 <= y1) return 0; // 沒有重疊
+  
+  const intersectionArea = (x2 - x1) * (y2 - y1);
+  const box1Area = box1.width * box1.height;
+  const box2Area = box2.width * box2.height;
+  const unionArea = box1Area + box2Area - intersectionArea;
+  
+  return intersectionArea / unionArea; // IoU (Intersection over Union)
 }
 
 export function drawFaceBoxes(
@@ -148,42 +188,45 @@ export function drawFaceBoxes(
   faces.forEach((face, index) => {
     const isWinner = winners.some(w => w.id === face.id);
     const centerX = face.box.x + face.box.width / 2;
-    const centerY = face.box.y + face.box.height / 2;
+    
+    // 檢測設備類型以調整樣式
+    const isMobile = window.innerWidth < 768;
+    const lineMultiplier = isMobile ? 2 : 1;
     
     // 綠色辨識人臉，紅色抽籤中獎
     if (isWinner) {
       // 中獎者：紅色強調邊框
-      ctx.lineWidth = 4;
+      ctx.lineWidth = 4 * lineMultiplier;
       
       // 外層光暈
       ctx.strokeStyle = '#dc2626';
       ctx.shadowColor = '#dc2626';
-      ctx.shadowBlur = 8;
+      ctx.shadowBlur = 12 * lineMultiplier;
       ctx.setLineDash([]);
       ctx.strokeRect(
-        face.box.x - 4,
-        face.box.y - 4,
-        face.box.width + 8,
-        face.box.height + 8
+        face.box.x - 6,
+        face.box.y - 6,
+        face.box.width + 12,
+        face.box.height + 12
       );
       
       // 主邊框
       ctx.strokeStyle = '#b91c1c';
-      ctx.lineWidth = 3;
-      ctx.shadowBlur = 4;
+      ctx.lineWidth = 3 * lineMultiplier;
+      ctx.shadowBlur = 6 * lineMultiplier;
       ctx.strokeRect(
-        face.box.x - 1,
-        face.box.y - 1,
-        face.box.width + 2,
-        face.box.height + 2
+        face.box.x - 2,
+        face.box.y - 2,
+        face.box.width + 4,
+        face.box.height + 4
       );
       
     } else {
       // 一般人臉：綠色邊框
       ctx.strokeStyle = '#16a34a';
-      ctx.lineWidth = 2;
+      ctx.lineWidth = 3 * lineMultiplier;
       ctx.shadowColor = '#16a34a';
-      ctx.shadowBlur = 4;
+      ctx.shadowBlur = 6 * lineMultiplier;
       ctx.setLineDash([]);
       ctx.strokeRect(
         face.box.x,
@@ -196,10 +239,11 @@ export function drawFaceBoxes(
     // 重置陰影
     ctx.shadowBlur = 0;
     
-    // 框框外圍右上角編號設計
-    const numberSize = isWinner ? 20 : 16;
-    const numberX = face.box.x + face.box.width + 8;
-    const numberY = face.box.y - 8;
+    // 框框外圍右上角編號設計，手機版放大
+    const baseNumberSize = isWinner ? 20 : 16;
+    const numberSize = baseNumberSize * (isMobile ? 1.5 : 1);
+    const numberX = face.box.x + face.box.width + (isMobile ? 12 : 8);
+    const numberY = face.box.y - (isMobile ? 12 : 8);
     
     // 編號背景框
     ctx.fillStyle = isWinner ? '#b91c1c' : '#16a34a';
@@ -233,28 +277,30 @@ export function drawFaceBoxes(
     
     if (isWinner) {
       // 簡潔慶祝效果
-      // 星星圖標
-      ctx.font = '24px Arial';
+      // 星星圖標，手機版放大
+      ctx.font = `${24 * (isMobile ? 1.5 : 1)}px Arial`;
       ctx.fillStyle = '#b91c1c';
       ctx.shadowColor = '#dc2626';
-      ctx.shadowBlur = 4;
-      ctx.fillText('⭐', centerX, face.box.y - 20);
+      ctx.shadowBlur = 6 * lineMultiplier;
+      ctx.fillText('⭐', centerX, face.box.y - (isMobile ? 30 : 20));
       
-      // 勝利文字
+      // 勝利文字，手機版放大
       ctx.shadowBlur = 0;
-      ctx.font = `600 ${Math.max(14, face.box.width / 8)}px -apple-system, BlinkMacSystemFont, sans-serif`;
+      const winnerFontSize = Math.max(14, face.box.width / 8) * (isMobile ? 1.3 : 1);
+      ctx.font = `600 ${winnerFontSize}px -apple-system, BlinkMacSystemFont, sans-serif`;
       ctx.fillStyle = '#b91c1c';
       ctx.strokeStyle = '#ffffff';
-      ctx.lineWidth = 2;
+      ctx.lineWidth = 2 * lineMultiplier;
       
       const winnerText = 'WINNER';
       // 文字陰影增強可讀性
-      ctx.shadowColor = 'rgba(0, 0, 0, 0.2)';
-      ctx.shadowBlur = 2;
-      ctx.shadowOffsetY = 1;
+      ctx.shadowColor = 'rgba(0, 0, 0, 0.3)';
+      ctx.shadowBlur = 3 * lineMultiplier;
+      ctx.shadowOffsetY = 2;
       
-      ctx.strokeText(winnerText, centerX, face.box.y + face.box.height + 30);
-      ctx.fillText(winnerText, centerX, face.box.y + face.box.height + 30);
+      const winnerY = face.box.y + face.box.height + (isMobile ? 45 : 30);
+      ctx.strokeText(winnerText, centerX, winnerY);
+      ctx.fillText(winnerText, centerX, winnerY);
       
       // 重置陰影
       ctx.shadowBlur = 0;

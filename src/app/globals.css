@@ -25,6 +25,24 @@ body {
   -moz-osx-font-smoothing: grayscale;
 }
 
+/* 修復手機瀏覽器視窗高度問題 */
+html, body {
+  height: 100%;
+  height: 100vh;
+  height: 100svh; /* Small viewport height for mobile */
+}
+
+/* 支援 CSS 自定義屬性來處理動態視窗高度 */
+:root {
+  --vh: 1vh;
+}
+
+@media screen and (max-width: 768px) {
+  .mobile-full-height {
+    min-height: calc(var(--vh, 1vh) * 100);
+  }
+}
+
 /* 簡潔的動畫效果 */
 @keyframes gentle-float {
   0%, 100% {
