@@ -22,21 +22,64 @@ export function animateWinnerSelection(
   onComplete: (winners: DetectedFace[]) => void,
   winnerCount: number = 1
 ): void {
-  const animationDuration = 2000;
-  const intervalTime = 100;
-  const steps = animationDuration / intervalTime;
-  let currentStep = 0;
+  const phases = [
+    { duration: 1000, interval: 50 },   // 快速閃爍階段
+    { duration: 1000, interval: 100 },  // 中等速度階段
+    { duration: 1000, interval: 200 },  // 逐漸減慢階段
+    { duration: 1000, interval: 400 }   // 最後減速階段
+  ];
   
-  const interval = setInterval(() => {
-    const randomFaces = shuffleArray(faces).slice(0, winnerCount);
-    onUpdate(randomFaces);
-    
-    currentStep++;
-    
-    if (currentStep >= steps) {
-      clearInterval(interval);
+  let phaseIndex = 0;
+  let stepInPhase = 0;
+  
+  function runPhase() {
+    if (phaseIndex >= phases.length) {
+      // 動畫結束，選出最終贏家
       const finalWinners = selectWinners(faces, winnerCount);
       onComplete(finalWinners);
+      return;
     }
-  }, intervalTime);
+    
+    const currentPhase = phases[phaseIndex];
+    const stepsInPhase = currentPhase.duration / currentPhase.interval;
+    
+    const interval = setInterval(() => {
+      // 根據階段調整隨機選擇的頻率和強度
+      let randomFaces: DetectedFace[];
+      
+      if (phaseIndex === 0) {
+        // 第一階段：完全隨機
+        randomFaces = shuffleArray(faces).slice(0, winnerCount);
+      } else if (phaseIndex === 1) {
+        // 第二階段：稍微偏向某些人臉
+        const shuffled = shuffleArray(faces);
+        randomFaces = shuffled.slice(0, winnerCount);
+      } else if (phaseIndex === 2) {
+        // 第三階段：開始收斂到候選人
+        const candidates = shuffleArray(faces).slice(0, Math.min(winnerCount * 3, faces.length));
+        randomFaces = shuffleArray(candidates).slice(0, winnerCount);
+      } else {
+        // 最後階段：在最終候選人中切換
+        const finalCandidates = shuffleArray(faces).slice(0, Math.min(winnerCount * 2, faces.length));
+        randomFaces = shuffleArray(finalCandidates).slice(0, winnerCount);
+      }
+      
+      onUpdate(randomFaces);
+      
+      stepInPhase++;
+      
+      if (stepInPhase >= stepsInPhase) {
+        clearInterval(interval);
+        phaseIndex++;
+        stepInPhase = 0;
+        
+        // 階段間短暫停頓
+        setTimeout(() => {
+          runPhase();
+        }, 100);
+      }
+    }, currentPhase.interval);
+  }
+  
+  runPhase();
 }

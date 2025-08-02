@@ -147,62 +147,124 @@ export function drawFaceBoxes(
   
   faces.forEach((face, index) => {
     const isWinner = winners.some(w => w.id === face.id);
-    
-    // 增加邊框粗細以提高可見度
-    ctx.strokeStyle = isWinner ? '#ff0000' : '#00ff00';
-    ctx.lineWidth = isWinner ? 6 : 3;
-    ctx.setLineDash(isWinner ? [10, 5] : []);
-    
-    // 添加陰影效果
-    ctx.shadowColor = isWinner ? '#ff0000' : '#00ff00';
-    ctx.shadowBlur = isWinner ? 10 : 5;
-    
-    ctx.strokeRect(
-      face.box.x,
-      face.box.y,
-      face.box.width,
-      face.box.height
-    );
-    
-    // 重置陰影
-    ctx.shadowBlur = 0;
-    
-    // 添加人臉編號
-    ctx.fillStyle = isWinner ? '#ffffff' : '#000000';
-    ctx.font = `${Math.max(16, face.box.width / 8)}px Arial`;
-    ctx.textAlign = 'center';
-    
     const centerX = face.box.x + face.box.width / 2;
     const centerY = face.box.y + face.box.height / 2;
     
-    // 繪製背景圓圈
-    ctx.beginPath();
-    ctx.arc(centerX, centerY, 15, 0, 2 * Math.PI);
-    ctx.fillStyle = isWinner ? '#ff0000' : '#00ff00';
-    ctx.fill();
-    
-    // 繪製編號
-    ctx.fillStyle = '#ffffff';
-    ctx.fillText((index + 1).toString(), centerX, centerY + 5);
-    
+    // 綠色辨識人臉，紅色抽籤中獎
     if (isWinner) {
-      // 添加中獎標記
-      ctx.fillStyle = 'rgba(255, 0, 0, 0.3)';
-      ctx.fillRect(
+      // 中獎者：紅色強調邊框
+      ctx.lineWidth = 4;
+      
+      // 外層光暈
+      ctx.strokeStyle = '#dc2626';
+      ctx.shadowColor = '#dc2626';
+      ctx.shadowBlur = 8;
+      ctx.setLineDash([]);
+      ctx.strokeRect(
+        face.box.x - 4,
+        face.box.y - 4,
+        face.box.width + 8,
+        face.box.height + 8
+      );
+      
+      // 主邊框
+      ctx.strokeStyle = '#b91c1c';
+      ctx.lineWidth = 3;
+      ctx.shadowBlur = 4;
+      ctx.strokeRect(
+        face.box.x - 1,
+        face.box.y - 1,
+        face.box.width + 2,
+        face.box.height + 2
+      );
+      
+    } else {
+      // 一般人臉：綠色邊框
+      ctx.strokeStyle = '#16a34a';
+      ctx.lineWidth = 2;
+      ctx.shadowColor = '#16a34a';
+      ctx.shadowBlur = 4;
+      ctx.setLineDash([]);
+      ctx.strokeRect(
         face.box.x,
         face.box.y,
         face.box.width,
         face.box.height
       );
+    }
+    
+    // 重置陰影
+    ctx.shadowBlur = 0;
+    
+    // 框框外圍右上角編號設計
+    const numberSize = isWinner ? 20 : 16;
+    const numberX = face.box.x + face.box.width + 8;
+    const numberY = face.box.y - 8;
+    
+    // 編號背景框
+    ctx.fillStyle = isWinner ? '#b91c1c' : '#16a34a';
+    ctx.shadowColor = 'rgba(0, 0, 0, 0.3)';
+    ctx.shadowBlur = 4;
+    ctx.shadowOffsetY = 2;
+    
+    const textWidth = ctx.measureText((index + 1).toString()).width + 8;
+    const backgroundWidth = Math.max(numberSize + 4, textWidth);
+    const backgroundHeight = numberSize + 4;
+    
+    ctx.fillRect(
+      numberX - backgroundWidth / 2,
+      numberY - backgroundHeight / 2,
+      backgroundWidth,
+      backgroundHeight
+    );
+    
+    // 編號文字
+    ctx.shadowBlur = 0;
+    ctx.shadowOffsetY = 0;
+    ctx.fillStyle = '#ffffff';
+    ctx.font = `600 ${numberSize}px -apple-system, BlinkMacSystemFont, sans-serif`;
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText(
+      (index + 1).toString(),
+      numberX,
+      numberY
+    );
+    
+    if (isWinner) {
+      // 簡潔慶祝效果
+      // 星星圖標
+      ctx.font = '24px Arial';
+      ctx.fillStyle = '#b91c1c';
+      ctx.shadowColor = '#dc2626';
+      ctx.shadowBlur = 4;
+      ctx.fillText('⭐', centerX, face.box.y - 20);
       
-      // 添加更大的慶祝圖標
-      ctx.font = `${Math.max(24, face.box.width / 4)}px Arial`;
-      ctx.fillStyle = '#ffff00';
-      ctx.fillText('🎉', face.box.x + face.box.width / 2, face.box.y - 10);
+      // 勝利文字
+      ctx.shadowBlur = 0;
+      ctx.font = `600 ${Math.max(14, face.box.width / 8)}px -apple-system, BlinkMacSystemFont, sans-serif`;
+      ctx.fillStyle = '#b91c1c';
+      ctx.strokeStyle = '#ffffff';
+      ctx.lineWidth = 2;
+      
+      const winnerText = 'WINNER';
+      // 文字陰影增強可讀性
+      ctx.shadowColor = 'rgba(0, 0, 0, 0.2)';
+      ctx.shadowBlur = 2;
+      ctx.shadowOffsetY = 1;
+      
+      ctx.strokeText(winnerText, centerX, face.box.y + face.box.height + 30);
+      ctx.fillText(winnerText, centerX, face.box.y + face.box.height + 30);
+      
+      // 重置陰影
+      ctx.shadowBlur = 0;
+      ctx.shadowOffsetY = 0;
     }
   });
   
   // 重置繪圖狀態
   ctx.setLineDash([]);
   ctx.textAlign = 'start';
+  ctx.textBaseline = 'alphabetic';
+  ctx.shadowBlur = 0;
 }
