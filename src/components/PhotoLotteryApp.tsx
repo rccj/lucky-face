@@ -8,6 +8,7 @@ import { DetectedFace, detectFaces, loadFaceApiModels, drawFaceBoxes } from '@/l
 import { animateWinnerSelection } from '@/lib/lottery';
 import ProductTour from './ProductTour';
 import Header from './Header';
+import FaceAdjuster from './FaceAdjuster';
 
 export default function PhotoLotteryApp() {
   const { t } = useTranslation();
@@ -38,6 +39,28 @@ export default function PhotoLotteryApp() {
   }, [isCapturing]);
   const [showUploadOptions, setShowUploadOptions] = useState(false);
   const [isTourActive, setIsTourActive] = useState(false);
+  const [showFaceAdjuster, setShowFaceAdjuster] = useState(false);
+  
+  // 彈窗模態行為 - 禁用背景滾動
+  useEffect(() => {
+    const hasAnyModalOpen = showFaceAdjuster || showUploadOptions;
+    
+    if (hasAnyModalOpen) {
+      // 開啟任何彈窗時禁用背景滾動
+      document.body.style.overflow = 'hidden';
+      document.body.style.touchAction = 'none';
+    } else {
+      // 所有彈窗關閉時恢復背景滾動
+      document.body.style.overflow = '';
+      document.body.style.touchAction = '';
+    }
+    
+    // 清理函數，確保組件卸載時恢復滾動
+    return () => {
+      document.body.style.overflow = '';
+      document.body.style.touchAction = '';
+    };
+  }, [showFaceAdjuster, showUploadOptions]);
   
   const imageRef = useRef<HTMLImageElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -254,6 +277,11 @@ export default function PhotoLotteryApp() {
     link.click();
   }, [detectedFaces, winners]);
 
+  // 開啟人臉調整彈窗時初始化
+  const handleOpenFaceAdjuster = useCallback(() => {
+    setShowFaceAdjuster(true);
+  }, []);
+
   return (
     <>
       <Header onStartTour={() => setIsTourActive(true)} />
@@ -403,6 +431,16 @@ export default function PhotoLotteryApp() {
 
             {detectedFaces.length > 0 && (
               <div className="text-center mb-6">
+                {/* 手動調整人臉框按鈕 */}
+                <div className="mb-4">
+                  <button
+                    onClick={handleOpenFaceAdjuster}
+                    className="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors text-sm"
+                  >
+                    ✏️ 手動調整人臉框
+                  </button>
+                </div>
+                
                 <div className="flex items-center justify-center gap-4 mb-4">
                   <label className="text-gray-600 font-medium">
                     Winners:
@@ -485,7 +523,7 @@ export default function PhotoLotteryApp() {
                     }}
                     className="w-full px-6 py-4 bg-gray-900 text-white rounded-2xl hover:bg-gray-800 transition-all duration-200 font-medium"
                   >
-                    📷 選擇照片
+                    選擇照片
                   </button>
                   
                   <button
@@ -495,7 +533,7 @@ export default function PhotoLotteryApp() {
                     }}
                     className="w-full px-6 py-4 bg-gray-100 text-gray-900 rounded-2xl hover:bg-gray-200 transition-all duration-200 font-medium"
                   >
-                    📱 拍照
+                    拍照
                   </button>
                   
                   <button
@@ -508,6 +546,21 @@ export default function PhotoLotteryApp() {
               </div>
             </div>
           )}
+
+          {/* 手動調整人臉框彈窗 */}
+          <FaceAdjuster
+            isOpen={showFaceAdjuster}
+            onClose={() => setShowFaceAdjuster(false)}
+            selectedImage={selectedImage}
+            faces={detectedFaces}
+            onSave={(adjustedFaces) => {
+              setDetectedFaces(adjustedFaces);
+              // 重新繪製人臉框
+              if (canvasRef.current && imageRef.current) {
+                drawFaceBoxes(canvasRef.current, adjustedFaces, winners);
+              }
+            }}
+          />
           
           <input
             ref={fileInputRef}
