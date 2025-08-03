@@ -187,7 +187,6 @@ export function drawFaceBoxes(
   
   faces.forEach((face, index) => {
     const isWinner = winners.some(w => w.id === face.id);
-    const centerX = face.box.x + face.box.width / 2;
     
     // 檢測設備類型以調整樣式
     const isMobile = window.innerWidth < 768;
@@ -275,37 +274,6 @@ export function drawFaceBoxes(
       numberY
     );
     
-    if (isWinner) {
-      // 簡潔慶祝效果
-      // 星星圖標，手機版放大
-      ctx.font = `${24 * (isMobile ? 1.5 : 1)}px Arial`;
-      ctx.fillStyle = '#b91c1c';
-      ctx.shadowColor = '#dc2626';
-      ctx.shadowBlur = 6 * lineMultiplier;
-      ctx.fillText('⭐', centerX, face.box.y - (isMobile ? 30 : 20));
-      
-      // 勝利文字，手機版放大
-      ctx.shadowBlur = 0;
-      const winnerFontSize = Math.max(14, face.box.width / 8) * (isMobile ? 1.3 : 1);
-      ctx.font = `600 ${winnerFontSize}px -apple-system, BlinkMacSystemFont, sans-serif`;
-      ctx.fillStyle = '#b91c1c';
-      ctx.strokeStyle = '#ffffff';
-      ctx.lineWidth = 2 * lineMultiplier;
-      
-      const winnerText = 'WINNER';
-      // 文字陰影增強可讀性
-      ctx.shadowColor = 'rgba(0, 0, 0, 0.3)';
-      ctx.shadowBlur = 3 * lineMultiplier;
-      ctx.shadowOffsetY = 2;
-      
-      const winnerY = face.box.y + face.box.height + (isMobile ? 45 : 30);
-      ctx.strokeText(winnerText, centerX, winnerY);
-      ctx.fillText(winnerText, centerX, winnerY);
-      
-      // 重置陰影
-      ctx.shadowBlur = 0;
-      ctx.shadowOffsetY = 0;
-    }
   });
   
   // 重置繪圖狀態

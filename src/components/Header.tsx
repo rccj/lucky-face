@@ -47,7 +47,7 @@ export default function Header({ onStartTour }: HeaderProps) {
               <h1 className="text-xl font-bold bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent">
                 Faceffle
               </h1>
-              <span className="ml-2 text-xs text-gray-400 bg-gray-100 px-2 py-1 rounded-full">v0.0.4</span>
+              <span className="ml-2 text-xs text-gray-400 bg-gray-100 px-2 py-1 rounded-full">v0.0.5</span>
             </div>
 
             {/* Desktop Navigation */}

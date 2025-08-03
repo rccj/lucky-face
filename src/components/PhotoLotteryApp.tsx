@@ -10,7 +10,7 @@ import ProductTour from './ProductTour';
 import Header from './Header';
 
 export default function PhotoLotteryApp() {
-  const { t, i18n } = useTranslation();
+  const { t } = useTranslation();
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
   const [detectedFaces, setDetectedFaces] = useState<DetectedFace[]>([]);
   const [winners, setWinners] = useState<DetectedFace[]>([]);
@@ -68,8 +68,12 @@ export default function PhotoLotteryApp() {
         await loadFaceApiModels();
       } catch (error) {
         console.error('Failed to load face detection models:', error);
+        // 模型載入失敗也不應該影響頁面，只是禁用檢測功能
+        alert('AI 模型載入失敗，請重新整理頁面或檢查網路連線');
+      } finally {
+        // 確保無論成功或失敗都會重置載入狀態
+        setIsModelsLoading(false);
       }
-      setIsModelsLoading(false);
     };
     
     // 檢查是否首次使用，啟動產品導覽
@@ -112,24 +116,6 @@ export default function PhotoLotteryApp() {
       reader.readAsDataURL(file);
     }
   }, []);
-
-  const startCamera = useCallback(async () => {
-    try {
-      setIsCapturing(true);
-      const stream = await navigator.mediaDevices.getUserMedia({ 
-        video: { facingMode: 'user' } 
-      });
-      
-      if (videoRef.current) {
-        videoRef.current.srcObject = stream;
-        videoRef.current.play();
-      }
-    } catch (error) {
-      console.error('Camera access denied:', error);
-      alert(t('error.cameraAccess'));
-      setIsCapturing(false);
-    }
-  }, [t]);
 
   const capturePhoto = useCallback(() => {
     if (videoRef.current && canvasRef.current) {
@@ -223,26 +209,21 @@ export default function PhotoLotteryApp() {
     link.click();
   }, [detectedFaces, winners]);
 
-  const toggleLanguage = () => {
-    i18n.changeLanguage(i18n.language === 'zh' ? 'en' : 'zh');
-  };
-
   return (
     <>
       <Header onStartTour={() => setIsTourActive(true)} />
       
       <div className={`bg-gray-50 pt-16 ${isMobile ? 'mobile-full-height' : ''}`} style={{ minHeight: isMobile ? 'calc(var(--vh, 1vh) * 100 - 4rem)' : 'calc(100vh - 4rem)' }}>
-        <div className="max-w-5xl mx-auto p-6">
-          <div className="text-center mb-12">
-            <h1 className="text-6xl font-light bg-gradient-to-r from-gray-900 to-gray-600 bg-clip-text text-transparent mb-4">
+        <div className="max-w-6xl mx-auto p-6">
+          <div className="text-center mb-8">
+            <h1 className="text-4xl md:text-6xl font-light bg-gradient-to-r from-gray-900 to-gray-600 bg-clip-text text-transparent mb-4">
               {t('title')}
             </h1>
-            <p className="text-lg text-gray-500 font-light">
+            <p className="text-base md:text-lg text-gray-500 font-light">
               {t('subtitle')}
             </p>
           </div>
-
-          <div className="max-w-md mx-auto">
+          <div className="max-w-2xl mx-auto">
             {/* 主功能區域 */}
             <div className="bg-white rounded-3xl shadow-xl p-8 relative overflow-hidden">
             {/* 裝飾性元素 */}
@@ -280,7 +261,10 @@ export default function PhotoLotteryApp() {
                 </div>
               ) : !selectedImage ? (
                 <div 
-                  onClick={() => {
+                  onClick={(e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    
                     if (isModelsLoading) return; // AI 模型載入中時禁用
                     
                     if (isMobile) {
@@ -352,18 +336,6 @@ export default function PhotoLotteryApp() {
               )}
             </div>
             
-            {detectedFaces.length > 0 && (
-              <div className="text-center mb-6">
-                <div className="inline-block bg-gray-900 text-white px-6 py-3 rounded-2xl font-medium">
-                  <span className="text-2xl font-light">{detectedFaces.length}</span>
-                  <br />
-                  <span className="text-sm opacity-90">{detectedFaces.length === 1 ? 'face' : 'faces'}</span>
-                </div>
-                <div className="mt-4">
-                  <div className="text-4xl mb-2">😊</div>
-                </div>
-              </div>
-            )}
 
             {selectedImage && detectedFaces.length === 0 && (
               <div className="text-center mb-6">
@@ -378,51 +350,46 @@ export default function PhotoLotteryApp() {
                   className="w-full max-w-md px-6 py-4 bg-gray-900 text-white rounded-2xl hover:bg-gray-800 transition-all duration-200 font-medium disabled:opacity-50 disabled:cursor-not-allowed"
                   data-tour="detect-button"
                 >
-                  {isProcessing ? (
-                    <span className="animate-pulse">Detecting...</span>
-                  ) : (
-                    'Detect Faces'
-                  )}
+                  {isProcessing ? 'Detecting...' : 'Detect Faces'}
                 </button>
               </div>
             )}
 
             {detectedFaces.length > 0 && (
-              <div className="max-w-md mx-auto mb-6">
-                <div className="bg-white rounded-2xl shadow-lg p-6">
-                  <div className="text-center mb-4">
-                    <label className="text-gray-600 font-medium text-sm mb-2 block">
-                      Select Winners
-                    </label>
-                    <input
-                      type="number"
-                      min="1"
-                      max={detectedFaces.length}
-                      value={winnerCount}
-                      onChange={(e) => setWinnerCount(Math.max(1, Math.min(detectedFaces.length, parseInt(e.target.value) || 1)))}
-                      className="w-20 px-3 py-2 bg-gray-50 text-gray-900 border border-gray-200 rounded-xl focus:ring-2 focus:ring-gray-900 focus:border-gray-900 text-center font-medium"
-                      data-tour="winner-count"
-                    />
-                  </div>
-                  
-                  <button
-                    type="button"
-                    onClick={(e) => {
-                      e.preventDefault();
-                      e.stopPropagation();
-                      handleStartLottery();
-                    }}
-                    disabled={isAnimating}
-                    className="w-full px-6 py-4 bg-gray-900 text-white rounded-2xl hover:bg-gray-800 transition-all duration-200 font-medium disabled:opacity-50 disabled:cursor-not-allowed"
-                    data-tour="lottery-button"
-                  >
-                    {isAnimating ? (
-                      <span className="animate-pulse">Drawing...</span>
-                    ) : (
-                      'Start Lottery'
-                    )}
-                  </button>
+              <div className="text-center mb-6">
+                <div className="flex items-center justify-center gap-4 mb-4">
+                  <label className="text-gray-600 font-medium">
+                    Winners:
+                  </label>
+                  <input
+                    type="number"
+                    min="1"
+                    max={detectedFaces.length}
+                    value={winnerCount}
+                    onChange={(e) => setWinnerCount(Math.max(1, Math.min(detectedFaces.length, parseInt(e.target.value) || 1)))}
+                    className="w-16 px-3 py-2 bg-gray-50 text-gray-900 border border-gray-200 rounded-xl focus:ring-2 focus:ring-gray-900 focus:border-gray-900 text-center font-medium"
+                    data-tour="winner-count"
+                  />
+                  <span className="text-gray-500">/ {detectedFaces.length}</span>
                 </div>
+                
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    handleStartLottery();
+                  }}
+                  disabled={isAnimating}
+                  className="px-8 py-4 bg-gray-900 text-white rounded-2xl hover:bg-gray-800 transition-all duration-200 font-medium disabled:opacity-50 disabled:cursor-not-allowed"
+                  data-tour="lottery-button"
+                >
+                  {isAnimating ? (
+                    <span className="animate-pulse">Drawing...</span>
+                  ) : (
+                    'Start Lottery'
+                  )}
+                </button>
               </div>
             )}
 
