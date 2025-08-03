@@ -19,6 +19,23 @@ export default function PhotoLotteryApp() {
   const [winnerCount, setWinnerCount] = useState(1);
   const [isModelsLoading, setIsModelsLoading] = useState(false);
   const [isCapturing, setIsCapturing] = useState(false);
+  
+  // 動態調整 video 比例
+  useEffect(() => {
+    const video = videoRef.current;
+    if (!video || !isCapturing) return;
+
+    const handleLoadedMetadata = () => {
+      const aspectRatio = video.videoWidth / video.videoHeight;
+      video.style.aspectRatio = aspectRatio.toString();
+    };
+
+    video.addEventListener('loadedmetadata', handleLoadedMetadata);
+    
+    return () => {
+      video.removeEventListener('loadedmetadata', handleLoadedMetadata);
+    };
+  }, [isCapturing]);
   const [showUploadOptions, setShowUploadOptions] = useState(false);
   const [isTourActive, setIsTourActive] = useState(false);
   
@@ -117,27 +134,55 @@ export default function PhotoLotteryApp() {
     }
   }, []);
 
-  const capturePhoto = useCallback(() => {
-    if (videoRef.current && canvasRef.current) {
-      const canvas = canvasRef.current;
-      const video = videoRef.current;
-      
-      canvas.width = video.videoWidth;
-      canvas.height = video.videoHeight;
-      
-      const ctx = canvas.getContext('2d');
-      if (ctx) {
-        ctx.drawImage(video, 0, 0);
-        const imageData = canvas.toDataURL('image/jpeg');
-        setSelectedImage(imageData);
-        setDetectedFaces([]);
-        setWinners([]);
-        
-        // Stop camera
-        const stream = video.srcObject as MediaStream;
-        stream?.getTracks().forEach(track => track.stop());
-        setIsCapturing(false);
+  const startCamera = useCallback(async () => {
+    try {
+      setIsCapturing(true); // 先設定狀態，讓UI更新
+      const stream = await navigator.mediaDevices.getUserMedia({ 
+        video: { 
+          facingMode: 'environment', // 優先使用後鏡頭
+          width: { ideal: 1280 },
+          height: { ideal: 960 },
+          aspectRatio: { ideal: 4/3 }
+        } 
+      });
+      if (videoRef.current) {
+        videoRef.current.srcObject = stream;
+        videoRef.current.play(); // 確保影片開始播放
       }
+    } catch (error) {
+      console.error('Failed to start camera:', error);
+      alert('無法啟動相機，請檢查權限設定');
+      setIsCapturing(false); // 如果失敗，重置狀態
+    }
+  }, []);
+
+  const capturePhoto = useCallback(() => {
+    const video = videoRef.current;
+    if (!video) return;
+    
+    if (video.videoWidth === 0 || video.videoHeight === 0) return;
+    
+    // 創建臨時 canvas 來拍照
+    const canvas = document.createElement('canvas');
+    canvas.width = video.videoWidth;
+    canvas.height = video.videoHeight;
+    
+    const ctx = canvas.getContext('2d');
+    if (ctx) {
+      // 翻轉 canvas 以恢復正常方向（因為預覽是鏡像的）
+      ctx.scale(-1, 1);
+      ctx.drawImage(video, -video.videoWidth, 0);
+      
+      const imageData = canvas.toDataURL('image/jpeg');
+      
+      setSelectedImage(imageData);
+      setDetectedFaces([]);
+      setWinners([]);
+      
+      // Stop camera
+      const stream = video.srcObject as MediaStream;
+      stream?.getTracks().forEach(track => track.stop());
+      setIsCapturing(false);
     }
   }, []);
 
@@ -235,7 +280,8 @@ export default function PhotoLotteryApp() {
                 <div>
                   <video
                     ref={videoRef}
-                    className="w-full h-64 bg-black rounded-2xl object-cover mb-4"
+                    className="w-full bg-black rounded-2xl mb-4"
+                    style={{ transform: 'scaleX(-1)' }}
                     autoPlay
                     playsInline
                     muted
@@ -433,8 +479,6 @@ export default function PhotoLotteryApp() {
                     onClick={() => {
                       if (fileInputRef.current) {
                         fileInputRef.current.value = '';
-                          fileInputRef.current.removeAttribute('capture');
-                          fileInputRef.current.setAttribute('accept', 'image/*');
                       }
                       fileInputRef.current?.click();
                       setShowUploadOptions(false);
@@ -446,12 +490,7 @@ export default function PhotoLotteryApp() {
                   
                   <button
                     onClick={() => {
-                      if (fileInputRef.current) {
-                        fileInputRef.current.value = '';
-                        fileInputRef.current.setAttribute('accept', 'image/*');
-                        fileInputRef.current.setAttribute('capture', 'environment');
-                      }
-                      fileInputRef.current?.click();
+                      startCamera();
                       setShowUploadOptions(false);
                     }}
                     className="w-full px-6 py-4 bg-gray-100 text-gray-900 rounded-2xl hover:bg-gray-200 transition-all duration-200 font-medium"
@@ -476,6 +515,7 @@ export default function PhotoLotteryApp() {
             accept="image/*"
             onChange={handleImageUpload}
             className="hidden"
+            multiple={false}
           />
 
           </div>
