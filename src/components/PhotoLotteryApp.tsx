@@ -288,12 +288,10 @@ export default function PhotoLotteryApp() {
       
       <div className={`bg-gray-50 pt-16 ${isMobile ? 'mobile-full-height' : ''}`} style={{ minHeight: isMobile ? 'calc(var(--vh, 1vh) * 100 - 4rem)' : 'calc(100vh - 4rem)' }}>
         <div className="max-w-6xl mx-auto p-6">
+          {/* 簡潔介紹 */}
           <div className="text-center mb-8">
-            <h1 className="text-4xl md:text-6xl font-light bg-gradient-to-r from-gray-900 to-gray-600 bg-clip-text text-transparent mb-4">
-              {t('title')}
-            </h1>
-            <p className="text-base md:text-lg text-gray-500 font-light">
-              {t('subtitle')}
+            <p className="text-lg text-gray-600 font-light">
+              上傳照片，AI 自動識別人臉，快速進行抽獎
             </p>
           </div>
           <div className="max-w-2xl mx-auto">
