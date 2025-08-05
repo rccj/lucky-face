@@ -269,7 +269,7 @@ export default function FaceAdjuster({
               ref={adjustImageRef}
               src={selectedImage}
               alt="調整人臉框"
-              className="w-full max-h-96 object-contain rounded-lg"
+              className={`w-full object-contain rounded-lg ${isMobile ? 'max-h-80' : 'max-h-[500px]'}`}
               style={{ maxWidth: '100%' }}
               onLoad={() => {
                 // 圖片加載完成後強制重新渲染

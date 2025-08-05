@@ -82,6 +82,12 @@ export default function PhotoLotteryApp() {
       animation: 'animate-spin'
     },
     {
+      title: '手動調整（可選）',
+      content: '如果需要，可以手動調整人臉框位置或新增/刪除人臉框',
+      icon: '✏️',
+      animation: 'animate-bounce'
+    },
+    {
       title: '設定人數',
       content: '選擇要抽出幾位幸運兒',
       icon: '🎯',
@@ -89,15 +95,9 @@ export default function PhotoLotteryApp() {
     },
     {
       title: '開始抽籤',
-      content: '緊張刺激的時刻到了！',
+      content: '緊張刺激的時刻到了！點擊空白鍵或任意位置重新抽籤',
       icon: '🎲',
       animation: 'animate-pulse'
-    },
-    {
-      title: '下載結果',
-      content: '保存你的抽獎結果',
-      icon: '💾',
-      animation: 'animate-bounce'
     },
   ];
 
@@ -209,6 +209,21 @@ export default function PhotoLotteryApp() {
     }
   }, []);
 
+  const updateCanvasSize = useCallback(() => {
+    if (canvasRef.current && imageRef.current) {
+      const canvas = canvasRef.current;
+      const image = imageRef.current;
+      
+      // 設置 canvas 的實際尺寸為圖片的自然尺寸
+      canvas.width = image.naturalWidth;
+      canvas.height = image.naturalHeight;
+      
+      // 設置 canvas 的顯示尺寸為圖片的顯示尺寸
+      canvas.style.width = `${image.clientWidth}px`;
+      canvas.style.height = `${image.clientHeight}px`;
+    }
+  }, []);
+
   const handleDetectFaces = useCallback(async () => {
     if (!selectedImage || !imageRef.current) return;
     
@@ -218,10 +233,8 @@ export default function PhotoLotteryApp() {
       setDetectedFaces(faces);
       
       if (canvasRef.current && imageRef.current) {
-        const canvas = canvasRef.current;
-        canvas.width = imageRef.current.naturalWidth;
-        canvas.height = imageRef.current.naturalHeight;
-        drawFaceBoxes(canvas, faces);
+        updateCanvasSize();
+        drawFaceBoxes(canvasRef.current, faces);
       }
       
       if (faces.length === 0) {
@@ -232,7 +245,7 @@ export default function PhotoLotteryApp() {
       alert(t('error.uploadFailed'));
     }
     setIsProcessing(false);
-  }, [selectedImage, t]);
+  }, [selectedImage, t, updateCanvasSize]);
 
   const handleStartLottery = useCallback(() => {
     if (detectedFaces.length === 0) return;
@@ -244,6 +257,7 @@ export default function PhotoLotteryApp() {
       detectedFaces,
       (currentFaces) => {
         if (canvasRef.current) {
+          updateCanvasSize();
           drawFaceBoxes(canvasRef.current, detectedFaces, currentFaces);
         }
       },
@@ -251,31 +265,14 @@ export default function PhotoLotteryApp() {
         setWinners(finalWinners);
         setIsAnimating(false);
         if (canvasRef.current) {
+          updateCanvasSize();
           drawFaceBoxes(canvasRef.current, detectedFaces, finalWinners);
         }
       },
       winnerCount
     );
-  }, [detectedFaces, winnerCount]);
+  }, [detectedFaces, winnerCount, updateCanvasSize]);
 
-  const handleDownload = useCallback(() => {
-    if (!canvasRef.current || !imageRef.current) return;
-    
-    const tempCanvas = document.createElement('canvas');
-    const tempCtx = tempCanvas.getContext('2d');
-    if (!tempCtx) return;
-    
-    tempCanvas.width = imageRef.current.naturalWidth;
-    tempCanvas.height = imageRef.current.naturalHeight;
-    
-    tempCtx.drawImage(imageRef.current, 0, 0);
-    drawFaceBoxes(tempCanvas, detectedFaces, winners);
-    
-    const link = document.createElement('a');
-    link.download = 'lottery-result.jpg';
-    link.href = tempCanvas.toDataURL('image/jpeg');
-    link.click();
-  }, [detectedFaces, winners]);
 
   // 開啟人臉調整彈窗時初始化
   const handleOpenFaceAdjuster = useCallback(() => {
@@ -286,7 +283,7 @@ export default function PhotoLotteryApp() {
     <>
       <Header onStartTour={() => setIsTourActive(true)} />
       
-      <div className={`bg-gray-50 pt-16 ${isMobile ? 'mobile-full-height' : ''}`} style={{ minHeight: isMobile ? 'calc(var(--vh, 1vh) * 100 - 4rem)' : 'calc(100vh - 4rem)' }}>
+       <div className={`bg-gray-50 pt-16 ${isMobile ? 'mobile-full-height' : ''}`} style={{ minHeight: isMobile ? 'calc(var(--vh, 1vh) * 100 - 4rem)' : 'calc(100vh - 4rem)' }}>
         <div className="max-w-6xl mx-auto p-6">
           {/* 簡潔介紹 */}
           <div className="text-center mb-8">
@@ -350,7 +347,7 @@ export default function PhotoLotteryApp() {
                       setShowUploadOptions(true);
                     }
                   }}
-                  className={`w-full h-64 border-2 border-dashed rounded-2xl flex flex-col items-center justify-center transition-all duration-200 ${
+                  className={`w-full ${isMobile ? 'h-64' : 'h-80 max-w-2xl mx-auto'} border-2 border-dashed rounded-2xl flex flex-col items-center justify-center transition-all duration-200 ${
                     isModelsLoading 
                       ? 'bg-gray-100 border-gray-300 cursor-not-allowed opacity-50' 
                       : 'bg-gray-50 border-gray-200 cursor-pointer hover:bg-gray-100 hover:border-gray-300'
@@ -376,12 +373,9 @@ export default function PhotoLotteryApp() {
                     ref={imageRef}
                     src={selectedImage}
                     alt="Selected"
-                    className={`w-full rounded-2xl transition-all duration-300 ${isProcessing ? 'opacity-60' : ''}`}
+                    className={`w-full rounded-2xl transition-all duration-300 ${isProcessing ? 'opacity-60' : ''} ${isMobile ? 'max-h-96' : 'max-h-[600px]'} object-contain`}
                     onLoad={() => {
-                      if (canvasRef.current && imageRef.current) {
-                        canvasRef.current.width = imageRef.current.naturalWidth;
-                        canvasRef.current.height = imageRef.current.naturalHeight;
-                      }
+                      updateCanvasSize();
                     }}
                   />
                   <canvas
@@ -428,19 +422,17 @@ export default function PhotoLotteryApp() {
             )}
 
             {detectedFaces.length > 0 && (
-              <div className="text-center mb-6">
-                {/* 手動調整人臉框按鈕 */}
-                <div className="mb-4">
+              <div className={`text-center ${isMobile ? 'mb-4' : 'mb-6'}`}>
+                {/* Winners 控制區和手動調整按鈕 */}
+                <div className={`flex items-center justify-center gap-4 ${isMobile ? 'mb-3' : 'mb-4'}`}>
                   <button
                     onClick={handleOpenFaceAdjuster}
-                    className="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors text-sm"
+                    className={`${isMobile ? 'px-3 py-2 text-xs' : 'px-4 py-2 text-sm'} bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors`}
                   >
                     ✏️ 手動調整人臉框
                   </button>
-                </div>
-                
-                <div className="flex items-center justify-center gap-4 mb-4">
-                  <label className="text-gray-600 font-medium">
+                  
+                  <label className={`text-gray-600 font-medium ${isMobile ? 'text-sm' : ''}`}>
                     Winners:
                   </label>
                   <input
@@ -449,10 +441,10 @@ export default function PhotoLotteryApp() {
                     max={detectedFaces.length}
                     value={winnerCount}
                     onChange={(e) => setWinnerCount(Math.max(1, Math.min(detectedFaces.length, parseInt(e.target.value) || 1)))}
-                    className="w-16 px-3 py-2 bg-gray-50 text-gray-900 border border-gray-200 rounded-xl focus:ring-2 focus:ring-gray-900 focus:border-gray-900 text-center font-medium"
+                    className={`${isMobile ? 'w-14 px-2 py-2 text-sm' : 'w-16 px-3 py-2'} bg-gray-50 text-gray-900 border border-gray-200 rounded-xl focus:ring-2 focus:ring-gray-900 focus:border-gray-900 text-center font-medium`}
                     data-tour="winner-count"
                   />
-                  <span className="text-gray-500">/ {detectedFaces.length}</span>
+                  <span className={`text-gray-500 ${isMobile ? 'text-sm' : ''}`}>/ {detectedFaces.length}</span>
                 </div>
                 
                 <button
@@ -463,7 +455,7 @@ export default function PhotoLotteryApp() {
                     handleStartLottery();
                   }}
                   disabled={isAnimating}
-                  className="px-8 py-4 bg-gray-900 text-white rounded-2xl hover:bg-gray-800 transition-all duration-200 font-medium disabled:opacity-50 disabled:cursor-not-allowed"
+                  className={`${isMobile ? 'px-6 py-3 text-sm' : 'px-8 py-4'} bg-gray-900 text-white rounded-2xl hover:bg-gray-800 transition-all duration-200 font-medium disabled:opacity-50 disabled:cursor-not-allowed`}
                   data-tour="lottery-button"
                 >
                   {isAnimating ? (
@@ -474,21 +466,6 @@ export default function PhotoLotteryApp() {
                 </button>
               </div>
             )}
-
-            {winners.length > 0 && (
-              <div className="text-center mb-6">
-                <p className="text-gray-500 text-sm mb-4">Press spacebar or click to reset</p>
-                <button
-                  onClick={handleDownload}
-                  className="inline-flex items-center justify-center px-8 py-4 bg-gray-900 text-white rounded-2xl hover:bg-gray-800 transition-all duration-200 font-medium"
-                  data-tour="download-button"
-                >
-                  <span className="mr-2">⚙️</span>
-                  Download Result
-                </button>
-              </div>
-            )}
-
           </div>
           
           {/* 上傳選項彈窗 */}
@@ -555,6 +532,7 @@ export default function PhotoLotteryApp() {
               setDetectedFaces(adjustedFaces);
               // 重新繪製人臉框
               if (canvasRef.current && imageRef.current) {
+                updateCanvasSize();
                 drawFaceBoxes(canvasRef.current, adjustedFaces, winners);
               }
             }}
