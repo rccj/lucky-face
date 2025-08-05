@@ -13,8 +13,8 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Faceffle - AI-Powered Group Photo Raffle",
-  description: "Faceffle - Upload group photos, detect faces with AI, and randomly select winners! Perfect for events, parties, and team activities.",
+  title: "LuckyFace - AI-Powered Group Photo Raffle",
+  description: "LuckyFace - Upload group photos, detect faces with AI, and randomly select winners! Perfect for events, parties, and team activities.",
 };
 
 export default function RootLayout({

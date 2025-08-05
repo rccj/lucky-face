@@ -117,7 +117,7 @@ export default function PhotoLotteryApp() {
     };
     
     // 檢查是否首次使用，啟動產品導覽
-    const hasSeenTour = localStorage.getItem('faceffle-tour-completed');
+    const hasSeenTour = localStorage.getItem('luckyface-tour-completed');
     if (!hasSeenTour) {
       setIsTourActive(true);
     }
@@ -556,11 +556,11 @@ export default function PhotoLotteryApp() {
         steps={tourSteps}
         isActive={isTourActive}
         onComplete={() => {
-          localStorage.setItem('faceffle-tour-completed', 'true');
+          localStorage.setItem('luckyface-tour-completed', 'true');
           setIsTourActive(false);
         }}
         onSkip={() => {
-          localStorage.setItem('faceffle-tour-completed', 'true');
+          localStorage.setItem('luckyface-tour-completed', 'true');
           setIsTourActive(false);
         }}
       />

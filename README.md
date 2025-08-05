@@ -1,6 +1,6 @@
-# 🎯 Faceffle - AI-Powered Group Photo Raffle
+# 🍀 LuckyFace - AI-Powered Group Photo Raffle
 
-**Faceffle** is an intelligent group photo raffle system powered by AI face detection. Upload group photos, automatically detect all faces, and randomly select winners with stunning visual effects!
+**LuckyFace** is an intelligent group photo raffle system powered by AI face detection. Upload group photos, automatically detect all faces, and randomly select winners with stunning visual effects!
 
 ## ✨ Features
 
@@ -88,7 +88,7 @@ npm start
 ## 📁 Project Structure
 
 ```
-faceffle/
+luckyface/
 ├── src/
 │   ├── app/
 │   │   ├── layout.tsx          # Main layout
@@ -131,7 +131,7 @@ Add new languages in `src/lib/i18n-client.ts` resources:
 ```typescript
 ja: {
   translation: {
-    title: 'Faceffle',
+    title: 'LuckyFace',
     subtitle: 'AI搭載グループ写真抽選',
     // ... other translations
   }
@@ -151,7 +151,7 @@ ja: {
 
 ## 🎨 Brand Identity
 
-**Faceffle** combines "Face" + "Raffle" to create a memorable brand identity:
+**LuckyFace** combines "Lucky" + "Face" to create a memorable brand identity:
 - 🎯 Target icon represents precision and goal achievement
 - Purple-to-pink gradient reflects creativity and excitement
 - Playful emoji icons add fun and accessibility

@@ -43,9 +43,9 @@ export default function Header({ onStartTour }: HeaderProps) {
           <div className="flex justify-between items-center h-16">
             {/* Logo */}
             <div className="flex items-center">
-              <div className="text-2xl mr-2">🎯</div>
+              <div className="text-2xl mr-2">🍀</div>
               <h1 className="text-xl font-bold bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent">
-                Faceffle
+                LuckyFace
               </h1>
               <span className="ml-2 text-xs text-gray-400 bg-gray-100 px-2 py-1 rounded-full">v0.0.7</span>
             </div>

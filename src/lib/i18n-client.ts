@@ -7,7 +7,7 @@ import LanguageDetector from 'i18next-browser-languagedetector';
 const resources = {
   en: {
     translation: {
-      title: 'Faceffle',
+      title: 'LuckyFace',
       subtitle: 'AI-Powered Group Photo Raffle',
       error: {
         noFaces: 'No faces detected in the photo',
@@ -18,7 +18,7 @@ const resources = {
   },
   zh: {
     translation: {
-      title: 'Faceffle',
+      title: 'LuckyFace',
       subtitle: 'AI 智慧團體照抽獎',
       error: {
         noFaces: '照片中未偵測到人臉',
