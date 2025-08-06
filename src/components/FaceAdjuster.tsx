@@ -3,6 +3,14 @@
 import { useState, useRef, useEffect, useCallback } from 'react';
 import * as faceapi from 'face-api.js';
 import { DetectedFace } from '@/lib/faceDetection';
+import {
+  Drawer,
+  DrawerClose,
+  DrawerContent,
+  DrawerDescription,
+  DrawerHeader,
+  DrawerTitle,
+} from "@/components/ui/drawer";
 
 interface FaceAdjusterProps {
   isOpen: boolean;
@@ -28,7 +36,7 @@ export default function FaceAdjuster({
   const [initialBox, setInitialBox] = useState({ x: 0, y: 0, width: 0, height: 0 });
   const [initialMousePos, setInitialMousePos] = useState({ x: 0, y: 0 });
   const [hasMoved, setHasMoved] = useState(false);
-
+  
   const adjustImageRef = useRef<HTMLImageElement>(null);
   const isMobile = typeof window !== 'undefined' && window.innerWidth < 768;
 
@@ -40,9 +48,21 @@ export default function FaceAdjuster({
     }
   }, [isOpen, faces]);
 
+
   // 處理人臉框拖拽和縮放
   useEffect(() => {
     if (!isDragging && !isResizing) return;
+
+    // 當開始拖拽或縮放時，完全禁用頁面滾動
+    const originalBodyStyle = document.body.style.overflow;
+    const originalBodyTouchAction = document.body.style.touchAction;
+    const originalDocumentStyle = document.documentElement.style.overflow;
+    const originalDocumentTouchAction = document.documentElement.style.touchAction;
+    
+    document.body.style.overflow = 'hidden';
+    document.body.style.touchAction = 'none';
+    document.documentElement.style.overflow = 'hidden';
+    document.documentElement.style.touchAction = 'none';
 
     const handleMove = (e: MouseEvent | TouchEvent) => {
       if (selectedFaceIndex < 0 || !adjustImageRef.current) return;
@@ -197,6 +217,12 @@ export default function FaceAdjuster({
       setIsResizing(false);
       setResizeHandle('');
       setHasMoved(false);
+      
+      // 恢復頁面滾動
+      document.body.style.overflow = originalBodyStyle;
+      document.body.style.touchAction = originalBodyTouchAction;
+      document.documentElement.style.overflow = originalDocumentStyle;
+      document.documentElement.style.touchAction = originalDocumentTouchAction;
     };
 
     // 添加滑鼠和觸控事件
@@ -210,6 +236,10 @@ export default function FaceAdjuster({
       document.removeEventListener('mouseup', handleEnd);
       document.removeEventListener('touchmove', handleMove as EventListener);
       document.removeEventListener('touchend', handleEnd);
+      
+      // 清理時也要恢復滾動，防止意外情況
+      document.body.style.overflow = originalBodyStyle;
+      document.body.style.touchAction = originalBodyTouchAction;
     };
   }, [isDragging, isResizing, selectedFaceIndex, dragOffset, adjustableFaces, resizeHandle, initialBox, initialMousePos, hasMoved]);
 
@@ -241,41 +271,48 @@ export default function FaceAdjuster({
 
   if (!isOpen || !selectedImage) return null;
 
-  return (
-    <div className={`fixed inset-0 z-50 flex justify-center transition-all duration-300 ${
-      isMobile ? 'items-end' : 'items-center'
-    }`} style={{ backdropFilter: 'blur(8px)', backgroundColor: 'rgba(0, 0, 0, 0.05)' }} onClick={onClose}>
-      <div className={`bg-white shadow-2xl transition-all duration-300 ${
-        isMobile 
-          ? 'rounded-t-3xl w-full max-w-full p-4 pb-8 animate-[slide-up_0.3s_ease-out] max-h-[90vh] overflow-y-auto'
-          : 'rounded-3xl w-full max-w-4xl mx-4 animate-[scale-in_0.3s_ease-out] p-6 max-h-[90vh] overflow-y-auto'
-      }`} onClick={(e) => e.stopPropagation()}>
-        {isMobile && <div className="w-12 h-1 bg-gray-300 rounded-full mx-auto mb-4"></div>}
-        
-        <div className={`${isMobile ? 'space-y-4' : 'space-y-6'}`}>
-          {!isMobile && (
-            <div className="text-center mb-6">
-              <h3 className="text-xl font-bold text-gray-900 mb-2">✏️ 手動調整人臉框</h3>
-              <p className="text-gray-600">點擊並拖拽來調整人臉框位置和大小</p>
-            </div>
-          )}
+  if (isMobile) {
+    return (
+      <Drawer open={isOpen} onOpenChange={onClose}>
+        <DrawerContent 
+          className="bg-white max-h-[85vh]"
+          style={{
+            touchAction: isDragging || isResizing ? 'none' : 'auto'
+          }}
+        >
+          <DrawerHeader className="text-center pb-2">
+            <DrawerTitle className="text-xl font-bold text-gray-900">✏️ 手動調整人臉框</DrawerTitle>
+            <DrawerDescription className="text-gray-600">
+              點擊並拖拽來調整人臉框位置和大小
+            </DrawerDescription>
+          </DrawerHeader>
           
-          {/* 圖片預覽區域 */}
           <div 
-            className="relative mx-auto max-w-full"
-            onClick={() => setSelectedFaceIndex(-1)}
+            className="px-4 pb-8 flex-1 overflow-y-auto"
+            style={{
+              touchAction: isDragging || isResizing ? 'none' : 'auto'
+            }}
           >
-            <img
-              ref={adjustImageRef}
-              src={selectedImage}
-              alt="調整人臉框"
-              className={`w-full object-contain rounded-lg ${isMobile ? 'max-h-80' : 'max-h-[500px]'}`}
-              style={{ maxWidth: '100%' }}
-              onLoad={() => {
-                // 圖片加載完成後強制重新渲染
-                setAdjustableFaces(prev => [...prev]);
+            <div className="space-y-4">
+            {/* 圖片預覽區域 */}
+            <div 
+              className="relative mx-auto max-w-full"
+              onClick={() => setSelectedFaceIndex(-1)}
+              style={{ 
+                touchAction: isDragging || isResizing ? 'none' : 'manipulation'
               }}
-            />
+            >
+              <img
+                ref={adjustImageRef}
+                src={selectedImage}
+                alt="調整人臉框"
+                className={`w-full object-contain rounded-lg ${isMobile ? 'max-h-80' : 'max-h-[500px]'}`}
+                style={{ maxWidth: '100%' }}
+                onLoad={() => {
+                  // 圖片加載完成後強制重新渲染
+                  setAdjustableFaces(prev => [...prev]);
+                }}
+              />
             
             {/* 可拖拽的人臉框覆蓋層 */}
             {adjustImageRef.current && adjustableFaces.map((face, index) => {
@@ -310,6 +347,7 @@ export default function FaceAdjuster({
                       height: `${height}px`,
                       borderWidth: isMobile ? '1px' : '1px',
                       borderColor: isSelected ? '#dc2626' : '#16a34a',
+                      touchAction: 'none', // 完全禁用觸控的默認行為
                     }}
                     onClick={(e) => {
                       e.stopPropagation();
@@ -353,7 +391,8 @@ export default function FaceAdjuster({
                         top: '-4px',
                         backgroundColor: isSelected ? '#dc2626' : '#16a34a',
                         border: '1px solid white',
-                        boxShadow: '0 1px 3px rgba(0,0,0,0.3)'
+                        boxShadow: '0 1px 3px rgba(0,0,0,0.3)',
+                        touchAction: 'none'
                       }}
                       onMouseDown={(e) => {
                         e.preventDefault();
@@ -386,7 +425,8 @@ export default function FaceAdjuster({
                         top: '-4px',
                         backgroundColor: isSelected ? '#dc2626' : '#16a34a',
                         border: '1px solid white',
-                        boxShadow: '0 1px 3px rgba(0,0,0,0.3)'
+                        boxShadow: '0 1px 3px rgba(0,0,0,0.3)',
+                        touchAction: 'none'
                       }}
                       onMouseDown={(e) => {
                         e.preventDefault();
@@ -419,7 +459,8 @@ export default function FaceAdjuster({
                         bottom: '-4px',
                         backgroundColor: isSelected ? '#dc2626' : '#16a34a',
                         border: '1px solid white',
-                        boxShadow: '0 1px 3px rgba(0,0,0,0.3)'
+                        boxShadow: '0 1px 3px rgba(0,0,0,0.3)',
+                        touchAction: 'none'
                       }}
                       onMouseDown={(e) => {
                         e.preventDefault();
@@ -452,7 +493,8 @@ export default function FaceAdjuster({
                         bottom: '-4px',
                         backgroundColor: isSelected ? '#dc2626' : '#16a34a',
                         border: '1px solid white',
-                        boxShadow: '0 1px 3px rgba(0,0,0,0.3)'
+                        boxShadow: '0 1px 3px rgba(0,0,0,0.3)',
+                        touchAction: 'none'
                       }}
                       onMouseDown={(e) => {
                         e.preventDefault();
@@ -494,6 +536,259 @@ export default function FaceAdjuster({
                       fontFamily: '-apple-system, BlinkMacSystemFont, sans-serif',
                       transform: 'translate(-50%, -50%)',
                       borderRadius: '2px',
+                      touchAction: 'none',
+                    }}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setSelectedFaceIndex(index);
+                    }}
+                    onMouseDown={(e) => {
+                      e.preventDefault();
+                      e.stopPropagation();
+                      setSelectedFaceIndex(index);
+                      setIsDragging(true);
+                      setHasMoved(false);
+                      
+                      const imgRect = imgElement.getBoundingClientRect();
+                      setInitialMousePos({ x: e.clientX, y: e.clientY });
+                      setDragOffset({
+                        x: e.clientX - imgRect.left - x,
+                        y: e.clientY - imgRect.top - y
+                      });
+                    }}
+                    onTouchStart={(e) => {
+                      e.preventDefault();
+                      e.stopPropagation();
+                      setSelectedFaceIndex(index);
+                      setIsDragging(true);
+                      setHasMoved(false);
+                      
+                      const imgRect = imgElement.getBoundingClientRect();
+                      const touch = e.touches[0];
+                      setInitialMousePos({ x: touch.clientX, y: touch.clientY });
+                      setDragOffset({
+                        x: touch.clientX - imgRect.left - x,
+                        y: touch.clientY - imgRect.top - y
+                      });
+                    }}
+                  >
+                    {index + 1}
+                  </div>
+                </div>
+              );
+            })}
+            </div>
+            
+            {/* 操作按鈕 */}
+            <div className="flex flex-col gap-3">
+              <div className="flex gap-3">
+                <button
+                  onClick={handleAddFace}
+                  className="flex-1 px-4 py-3 bg-green-500 text-white rounded-2xl hover:bg-green-600 transition-all duration-200 font-medium"
+                >
+                  ➕ 新增人臉框
+                </button>
+                <button
+                  onClick={handleDeleteFace}
+                  disabled={selectedFaceIndex < 0}
+                  className="flex-1 px-4 py-3 bg-red-500 text-white rounded-2xl hover:bg-red-600 transition-all duration-200 font-medium disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  ➖ 刪除選中
+                </button>
+              </div>
+              
+              <div className="flex gap-3">
+                <DrawerClose asChild>
+                  <button className="flex-1 px-4 py-3 bg-gray-100 text-gray-600 rounded-2xl hover:bg-gray-200 transition-all duration-200 font-medium">
+                    取消
+                  </button>
+                </DrawerClose>
+                <button
+                  onClick={handleSave}
+                  className="flex-1 px-4 py-3 bg-gray-900 text-white rounded-2xl hover:bg-gray-800 transition-all duration-200 font-medium"
+                >
+                  💾 保存調整
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </DrawerContent>
+    </Drawer>
+    );
+  }
+
+  // 桌面版使用自定義彈窗
+  return (
+    <div 
+      className="fixed inset-0 z-50 flex justify-center items-center" 
+      style={{ 
+        backdropFilter: 'blur(8px)', 
+        backgroundColor: 'rgba(0, 0, 0, 0.5)'
+      }} 
+      onClick={onClose}
+    >
+      <div 
+        className="bg-white shadow-2xl rounded-3xl w-full max-w-4xl mx-4 animate-[scale-in_0.3s_ease-out] p-6 max-h-[90vh] overflow-y-auto"
+        style={{
+          touchAction: isDragging || isResizing ? 'none' : 'auto'
+        }}
+        onClick={(e) => e.stopPropagation()}
+      >
+        <div className="text-center mb-6">
+          <h3 className="text-xl font-bold text-gray-900 mb-2">✏️ 手動調整人臉框</h3>
+          <p className="text-gray-600">點擊並拖拽來調整人臉框位置和大小</p>
+        </div>
+        
+        <div className="space-y-6">
+          {/* 圖片預覽區域 */}
+          <div 
+            className="relative mx-auto max-w-full"
+            onClick={() => setSelectedFaceIndex(-1)}
+            style={{ 
+              touchAction: isDragging || isResizing ? 'none' : 'manipulation'
+            }}
+          >
+            <img
+              ref={adjustImageRef}
+              src={selectedImage}
+              alt="調整人臉框"
+              className="w-full object-contain rounded-lg max-h-[500px]"
+              style={{ maxWidth: '100%' }}
+              onLoad={() => {
+                // 圖片加載完成後強制重新渲染
+                setAdjustableFaces(prev => [...prev]);
+              }}
+            />
+            
+            {/* 可拖拽的人臉框覆蓋層 */}
+            {adjustImageRef.current && adjustableFaces.map((face, index) => {
+              const imgElement = adjustImageRef.current!;
+              
+              // 計算縮放和位置
+              const scaleX = imgElement.clientWidth / imgElement.naturalWidth;
+              const scaleY = imgElement.clientHeight / imgElement.naturalHeight;
+              const scale = Math.min(scaleX, scaleY);
+              
+              const displayWidth = imgElement.naturalWidth * scale;
+              const displayHeight = imgElement.naturalHeight * scale;
+              const offsetX = (imgElement.clientWidth - displayWidth) / 2;
+              const offsetY = (imgElement.clientHeight - displayHeight) / 2;
+              
+              const x = face.box.x * scale + offsetX;
+              const y = face.box.y * scale + offsetY;
+              const width = face.box.width * scale;
+              const height = face.box.height * scale;
+              
+              const isSelected = selectedFaceIndex === index;
+              
+              return (
+                <div key={face.id || `face-${index}`}>
+                  {/* 人臉框 */}
+                  <div
+                    className="absolute cursor-move transition-all duration-200 hover:scale-105"
+                    style={{
+                      left: `${x}px`,
+                      top: `${y}px`,
+                      width: `${width}px`,
+                      height: `${height}px`,
+                      borderWidth: '1px',
+                      borderColor: isSelected ? '#dc2626' : '#16a34a',
+                      touchAction: 'none',
+                    }}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setSelectedFaceIndex(index);
+                    }}
+                    onMouseDown={(e) => {
+                      e.preventDefault();
+                      e.stopPropagation();
+                      setSelectedFaceIndex(index);
+                      setIsDragging(true);
+                      setHasMoved(false);
+                      
+                      const imgRect = imgElement.getBoundingClientRect();
+                      setInitialMousePos({ x: e.clientX, y: e.clientY });
+                      setDragOffset({
+                        x: e.clientX - imgRect.left - x,
+                        y: e.clientY - imgRect.top - y
+                      });
+                    }}
+                    onTouchStart={(e) => {
+                      e.preventDefault();
+                      e.stopPropagation();
+                      setSelectedFaceIndex(index);
+                      setIsDragging(true);
+                      setHasMoved(false);
+                      
+                      const imgRect = imgElement.getBoundingClientRect();
+                      const touch = e.touches[0];
+                      setInitialMousePos({ x: touch.clientX, y: touch.clientY });
+                      setDragOffset({
+                        x: touch.clientX - imgRect.left - x,
+                        y: touch.clientY - imgRect.top - y
+                      });
+                    }}
+                  >
+                    {/* 四個角落的拖拽點 */}
+                    {[
+                      { position: 'top-left', cursor: 'nw-resize', style: { left: '-4px', top: '-4px' } },
+                      { position: 'top-right', cursor: 'ne-resize', style: { right: '-4px', top: '-4px' } },
+                      { position: 'bottom-left', cursor: 'sw-resize', style: { left: '-4px', bottom: '-4px' } },
+                      { position: 'bottom-right', cursor: 'se-resize', style: { right: '-4px', bottom: '-4px' } }
+                    ].map((corner) => (
+                      <div 
+                        key={corner.position}
+                        className={`absolute w-2 h-2 rounded-full cursor-${corner.cursor}`}
+                        style={{ 
+                          ...corner.style,
+                          backgroundColor: isSelected ? '#dc2626' : '#16a34a',
+                          border: '1px solid white',
+                          boxShadow: '0 1px 3px rgba(0,0,0,0.3)',
+                          touchAction: 'none'
+                        }}
+                        onMouseDown={(e) => {
+                          e.preventDefault();
+                          e.stopPropagation();
+                          setSelectedFaceIndex(index);
+                          setIsDragging(false);
+                          setIsResizing(true);
+                          setResizeHandle(corner.position);
+                          setInitialBox({ ...face.box });
+                          setInitialMousePos({ x: e.clientX, y: e.clientY });
+                          setHasMoved(false);
+                        }}
+                        onTouchStart={(e) => {
+                          e.preventDefault();
+                          e.stopPropagation();
+                          setSelectedFaceIndex(index);
+                          setIsDragging(false);
+                          setIsResizing(true);
+                          setResizeHandle(corner.position);
+                          setInitialBox({ ...face.box });
+                          const touch = e.touches[0];
+                          setInitialMousePos({ x: touch.clientX, y: touch.clientY });
+                          setHasMoved(false);
+                        }}
+                      />
+                    ))}
+                  </div>
+                  
+                  {/* 編號標籤 */}
+                  <div
+                    className="absolute text-white font-semibold flex items-center justify-center cursor-move hover:scale-110 transition-transform"
+                    style={{
+                      left: `${x + width + 6}px`,
+                      top: `${y - 6}px`,
+                      width: '14px',
+                      height: '14px',
+                      backgroundColor: isSelected ? '#dc2626' : '#16a34a',
+                      fontSize: '10px',
+                      boxShadow: '0 2px 4px rgba(0, 0, 0, 0.3)',
+                      fontFamily: '-apple-system, BlinkMacSystemFont, sans-serif',
+                      transform: 'translate(-50%, -50%)',
+                      borderRadius: '2px',
+                      touchAction: 'none',
                     }}
                     onClick={(e) => {
                       e.stopPropagation();
@@ -557,7 +852,7 @@ export default function FaceAdjuster({
             <div className="flex gap-3">
               <button
                 onClick={onClose}
-                className="flex-1 px-4 py-3 text-gray-600 rounded-2xl hover:bg-gray-50 transition-all duration-200 font-medium"
+                className="flex-1 px-4 py-3 bg-gray-100 text-gray-600 rounded-2xl hover:bg-gray-200 transition-all duration-200 font-medium"
               >
                 取消
               </button>

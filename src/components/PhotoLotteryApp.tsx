@@ -61,6 +61,7 @@ export default function PhotoLotteryApp() {
       document.body.style.touchAction = '';
     };
   }, [showFaceAdjuster, showUploadOptions]);
+
   
   const imageRef = useRef<HTMLImageElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -423,29 +424,63 @@ export default function PhotoLotteryApp() {
 
             {detectedFaces.length > 0 && (
               <div className={`text-center ${isMobile ? 'mb-4' : 'mb-6'}`}>
-                {/* Winners 控制區和手動調整按鈕 */}
-                <div className={`flex items-center justify-center gap-4 ${isMobile ? 'mb-3' : 'mb-4'}`}>
-                  <button
-                    onClick={handleOpenFaceAdjuster}
-                    className={`${isMobile ? 'px-3 py-2 text-xs' : 'px-4 py-2 text-sm'} bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors`}
-                  >
-                    ✏️ 手動調整人臉框
-                  </button>
-                  
-                  <label className={`text-gray-600 font-medium ${isMobile ? 'text-sm' : ''}`}>
-                    Winners:
-                  </label>
-                  <input
-                    type="number"
-                    min="1"
-                    max={detectedFaces.length}
-                    value={winnerCount}
-                    onChange={(e) => setWinnerCount(Math.max(1, Math.min(detectedFaces.length, parseInt(e.target.value) || 1)))}
-                    className={`${isMobile ? 'w-14 px-2 py-2 text-sm' : 'w-16 px-3 py-2'} bg-gray-50 text-gray-900 border border-gray-200 rounded-xl focus:ring-2 focus:ring-gray-900 focus:border-gray-900 text-center font-medium`}
-                    data-tour="winner-count"
-                  />
-                  <span className={`text-gray-500 ${isMobile ? 'text-sm' : ''}`}>/ {detectedFaces.length}</span>
-                </div>
+                {isMobile ? (
+                  // 手機版：垂直排列
+                  <>
+                    {/* 調整按鈕 */}
+                    <div className="mb-3">
+                      <button
+                        onClick={handleOpenFaceAdjuster}
+                        className="px-4 py-2 text-sm bg-blue-500 text-white rounded-xl hover:bg-blue-600 transition-colors"
+                      >
+                        ✏️ 調整
+                      </button>
+                    </div>
+                    
+                    {/* Winners 控制區 */}
+                    <div className="flex items-center justify-center gap-3 mb-4">
+                      <label className="text-gray-600 font-medium text-sm">
+                        Winner:
+                      </label>
+                      <input
+                        type="number"
+                        min="1"
+                        disabled // 先不開放調整
+                        max={detectedFaces.length}
+                        value={winnerCount}
+                        onChange={(e) => setWinnerCount(Math.max(1, Math.min(detectedFaces.length, parseInt(e.target.value) || 1)))}
+                        className="w-16 px-3 py-2 text-sm bg-gray-50 text-gray-900 border border-gray-200 rounded-xl focus:ring-2 focus:ring-gray-900 focus:border-gray-900 text-center font-medium"
+                        data-tour="winner-count"
+                      />
+                      <span className="text-gray-500 text-sm">/ {detectedFaces.length}</span>
+                    </div>
+                  </>
+                ) : (
+                  // 桌面版：水平排列
+                  <div className="flex items-center justify-center gap-4 mb-4">
+                    <button
+                      onClick={handleOpenFaceAdjuster}
+                      className="px-4 py-2 text-sm bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors"
+                    >
+                      ✏️ 調整
+                    </button>
+                    
+                    <label className="text-gray-600 font-medium">
+                      Winner:
+                    </label>
+                    <input
+                      type="number"
+                      min="1"
+                      max={detectedFaces.length}
+                      disabled // 先不開放調整
+                      value={winnerCount}
+                      onChange={(e) => setWinnerCount(Math.max(1, Math.min(detectedFaces.length, parseInt(e.target.value) || 1)))}
+                      className="w-16 px-3 py-2 bg-gray-50 text-gray-900 border border-gray-200 rounded-xl focus:ring-2 focus:ring-gray-900 focus:border-gray-900 text-center font-medium"
+                      data-tour="winner-count"
+                    />
+                    <span className="text-gray-500">/ {detectedFaces.length}</span>
+                  </div>
+                )}
                 
                 <button
                   type="button"
