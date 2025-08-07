@@ -43,7 +43,7 @@ export default function Header({ onStartTour }: HeaderProps) {
               <h1 className="text-xl font-bold bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent">
                 LuckyFace
               </h1>
-              <span className="ml-2 text-xs text-gray-400 bg-gray-100 px-2 py-1 rounded-full">v0.0.13</span>
+              <span className="ml-2 text-xs text-gray-400 bg-gray-100 px-2 py-1 rounded-full">v0.0.14</span>
             </div>
 
             {/* Desktop Navigation */}
@@ -53,7 +53,7 @@ export default function Header({ onStartTour }: HeaderProps) {
                 className="flex items-center text-gray-600 hover:text-gray-900 transition-colors font-medium"
               >
                 <AcademicCapIcon className="w-5 h-5 mr-2" />
-                  {t('tutorial')}
+                {t('tutorial')}
               </button>
               <LanguageSwitcher />
             </div>
@@ -113,7 +113,7 @@ export default function Header({ onStartTour }: HeaderProps) {
                 className={`transform transition-all duration-300 ${
                   isMenuOpen ? 'translate-x-0 opacity-100' : 'translate-x-4 opacity-0'
                 }`}
-                style={{ transitionDelay: isMenuOpen ? '200ms' : '0ms' }}
+                style={{ transitionDelay: isMenuOpen ? '150ms' : '0ms' }}
               >
                 <LanguageSwitcher />
               </div>

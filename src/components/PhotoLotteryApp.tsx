@@ -391,6 +391,7 @@ export default function PhotoLotteryApp() {
                   {!isModelsLoading && (
                     <>
                       <p className="text-gray-500 font-medium">{t('selectPhoto')}</p>
+                      <p className="text-gray-400 font-medium text-sm mt-2">{t('selectPhotoDesc')}</p>
                     </>
                   )}
                   {isModelsLoading && (
@@ -550,8 +551,8 @@ export default function PhotoLotteryApp() {
                 <div className={`${isMobile ? 'space-y-3' : 'space-y-4'}`}>
                   {!isMobile && (
                     <div className="text-center mb-6">
-                      <h3 className="text-xl font-bold text-gray-900 mb-2">{t('selectPhoto')}</h3>
-                      <p className="text-gray-600">{t('choosePhoto')}</p>
+                      <h3 className="text-xl font-bold text-gray-900 mb-2">{t('choosePhoto')}</h3>
+                      <p className="text-gray-600">{t('choosePhotoDesc')}</p>
                     </div>
                   )}
                   
