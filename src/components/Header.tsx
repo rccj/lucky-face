@@ -2,14 +2,15 @@
 
 import { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
-import { AcademicCapIcon, GlobeAltIcon, Bars3Icon, XMarkIcon } from '@heroicons/react/24/outline';
+import { AcademicCapIcon, Bars3Icon, XMarkIcon } from '@heroicons/react/24/outline';
+import LanguageSwitcher from './LanguageSwitcher';
 
 interface HeaderProps {
   onStartTour: () => void;
 }
 
 export default function Header({ onStartTour }: HeaderProps) {
-  const { t, i18n } = useTranslation();
+  const { t } = useTranslation();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isScrolled, setIsScrolled] = useState(false);
 
@@ -21,11 +22,6 @@ export default function Header({ onStartTour }: HeaderProps) {
     window.addEventListener('scroll', handleScroll);
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
-
-  const toggleLanguage = () => {
-    i18n.changeLanguage(i18n.language === 'zh' ? 'en' : 'zh');
-    setIsMenuOpen(false);
-  };
 
   const handleStartTour = () => {
     onStartTour();
@@ -47,7 +43,7 @@ export default function Header({ onStartTour }: HeaderProps) {
               <h1 className="text-xl font-bold bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent">
                 LuckyFace
               </h1>
-              <span className="ml-2 text-xs text-gray-400 bg-gray-100 px-2 py-1 rounded-full">v0.0.12</span>
+              <span className="ml-2 text-xs text-gray-400 bg-gray-100 px-2 py-1 rounded-full">v0.0.13</span>
             </div>
 
             {/* Desktop Navigation */}
@@ -57,15 +53,9 @@ export default function Header({ onStartTour }: HeaderProps) {
                 className="flex items-center text-gray-600 hover:text-gray-900 transition-colors font-medium"
               >
                 <AcademicCapIcon className="w-5 h-5 mr-2" />
-                教學
+                  {t('tutorial')}
               </button>
-              <button
-                onClick={toggleLanguage}
-                className="flex items-center text-gray-600 hover:text-gray-900 transition-colors font-medium"
-              >
-                <GlobeAltIcon className="w-5 h-5 mr-2" />
-                {i18n.language === 'zh' ? 'English' : '中文'}
-              </button>
+              <LanguageSwitcher />
             </div>
 
             {/* Mobile Menu Button */}
@@ -117,18 +107,16 @@ export default function Header({ onStartTour }: HeaderProps) {
                 style={{ transitionDelay: isMenuOpen ? '100ms' : '0ms' }}
               >
                 <AcademicCapIcon className="w-6 h-6 mr-4" />
-                <span>觀看教學</span>
+                <span>{t('watchTutorial')}</span>
               </button>
-              <button
-                onClick={toggleLanguage}
-                className={`flex items-center w-full text-left py-4 text-gray-700 hover:text-gray-900 hover:bg-gray-50 rounded-lg transition-all duration-300 font-medium transform ${
+              <div
+                className={`transform transition-all duration-300 ${
                   isMenuOpen ? 'translate-x-0 opacity-100' : 'translate-x-4 opacity-0'
                 }`}
                 style={{ transitionDelay: isMenuOpen ? '200ms' : '0ms' }}
               >
-                <GlobeAltIcon className="w-6 h-6 mr-4" />
-                <span>{i18n.language === 'zh' ? 'Switch to English' : '切換到中文'}</span>
-              </button>
+                <LanguageSwitcher />
+              </div>
             </div>
           </div>
         </div>

@@ -8,16 +8,16 @@ const resources = {
   en: {
     translation: {
       title: 'LuckyFace',
-      subtitle: 'Upload photos, randomly select lucky winners',
+      subtitle: 'Upload photos, randomly select Lucky Face',
       
       // Main interface
       selectPhoto: 'Select Photo',
       detectFaces: 'Detect Faces',
       detecting: 'Detecting...',
-      selectLucky: 'Who is Lucky',
+      selectLucky: 'Who is Lucky Face',
       selecting: 'Selecting...',
-      luckyPerson: 'Lucky Winner',
-      luckyPersons: 'Lucky Winners',
+      luckyPerson: 'Lucky Face',
+      luckyPersons: 'Lucky Face',
       
       // Upload options
       choosePhoto: 'Choose Photo',
@@ -29,14 +29,14 @@ const resources = {
       adjustFaces: '✏️ Adjust Face Boxes',
       dragToAdjust: 'Drag to adjust position and size',
       noFacesDetected: 'No faces detected',
-      manuallyMarkLucky: 'Please manually mark each lucky person',
+      manuallyMarkLucky: 'Please manually mark each Lucky Face',
       addFace: '➕ Add',
       deleteFace: '➖ Delete',
       save: 'Save',
       
       // Lottery modal
-      whoIsLucky: '🎲 Who is lucky...',
-      thisLucky: '🎉 This Lucky Winner',
+      whoIsLucky: '🎲 Who is Lucky Face...',
+      thisLucky: '🎉 Get the Lucky Face',
       ding: '✨ Ding Ding',
       clickPhotoReselect: '💡 Click photo to reselect',
       clickBlankClose: '💡 Click blank area or press ESC to close',
@@ -49,9 +49,9 @@ const resources = {
       detectFaceTitle: 'Detect Faces',
       detectFaceDesc: 'AI will automatically detect all faces in the photo and mark them',
       randomSelectTitle: 'Random Selection',
-      randomSelectDesc: 'Set the number of lucky winners and click the button to start random selection',
-      congratsTitle: 'Congratulations Lucky Winners',
-      congratsDesc: 'Congratulations! View the selected lucky winners, can reselect',
+      randomSelectDesc: 'Set the number of Lucky Face and click the button to start random selection',
+      congratsTitle: 'Congratulations Lucky Face',
+      congratsDesc: 'Congratulations! View the selected Lucky Face, can reselect',
       previous: 'Previous',
       next: 'Next',
       complete: 'Complete',
@@ -60,6 +60,8 @@ const resources = {
       close: 'Close',
       adjust: 'Adjust',
       loading: 'Loading...',
+      tutorial: 'Tutorial',
+      watchTutorial: 'Watch Tutorial',
       
       // Error messages
       error: {
@@ -125,6 +127,8 @@ const resources = {
       close: '關閉',
       adjust: '調整',
       loading: '載入中...',
+      tutorial: '教學',
+      watchTutorial: '觀看教學',
       
       // Error messages
       error: {
