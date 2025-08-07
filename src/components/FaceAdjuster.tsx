@@ -469,7 +469,7 @@ export default function FaceAdjuster({
           
           
           {/* 操作按鈕 */}
-          <div className="flex flex-col gap-3">
+          <div className="flex flex-col gap-3 mt-6">
             <div className="flex gap-3">
               <button
                 onClick={handleAddFace}

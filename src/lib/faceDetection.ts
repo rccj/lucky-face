@@ -14,17 +14,42 @@ export interface DetectedFace {
 
 let modelsLoaded = false;
 
+// 檢查模型是否已經載入到記憶體中
+function checkModelsLoaded(): boolean {
+  return faceapi.nets.tinyFaceDetector.params && faceapi.nets.ssdMobilenetv1.params;
+}
+
 export async function loadFaceApiModels(): Promise<void> {
-  if (modelsLoaded) return;
+  // 先檢查模型是否已經在記憶體中
+  if (modelsLoaded || checkModelsLoaded()) {
+    modelsLoaded = true;
+    console.log('Models already loaded in memory');
+    return;
+  }
   
   const modelUrl = '/models';
   
-  await Promise.all([
-    faceapi.nets.tinyFaceDetector.loadFromUri(modelUrl),
-    faceapi.nets.ssdMobilenetv1.loadFromUri(modelUrl),
-  ]);
-  
-  modelsLoaded = true;
+  try {
+    console.log('Loading face detection models...');
+    
+    // 先載入 TinyFaceDetector (較小)
+    if (!faceapi.nets.tinyFaceDetector.params) {
+      await faceapi.nets.tinyFaceDetector.loadFromUri(modelUrl);
+      console.log('TinyFaceDetector loaded successfully');
+    }
+    
+    // 再載入 SSD MobileNetv1 (較大)
+    if (!faceapi.nets.ssdMobilenetv1.params) {
+      await faceapi.nets.ssdMobilenetv1.loadFromUri(modelUrl);
+      console.log('SsdMobilenetv1 loaded successfully');
+    }
+    
+    modelsLoaded = true;
+    console.log('All face detection models loaded successfully');
+  } catch (error) {
+    console.error('Failed to load face detection models:', error);
+    throw new Error(`Failed to load AI models: ${error instanceof Error ? error.message : 'Unknown error'}`);
+  }
 }
 
 function preprocessImage(imageElement: HTMLImageElement): HTMLCanvasElement {
@@ -53,8 +78,9 @@ function preprocessImage(imageElement: HTMLImageElement): HTMLCanvasElement {
 }
 
 export async function detectFaces(imageElement: HTMLImageElement): Promise<DetectedFace[]> {
+  // 確保模型已載入（這裡應該已經在 handleDetectFaces 中載入了）
   if (!modelsLoaded) {
-    await loadFaceApiModels();
+    throw new Error('Models not loaded. Please try again.');
   }
   
   // 使用 react-device-detect 檢測手機裝置

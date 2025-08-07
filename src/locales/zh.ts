@@ -63,7 +63,8 @@ export const zh = {
       noFaces: '照片中未偵測到人臉',
       cameraAccess: '無法啟動相機，請檢查權限設定',
       uploadFailed: '照片上傳失敗',
-      loadingAI: 'Loading AI...'
+      loadingAI: '正在載入 AI 模型...',
+      downloadingModels: '首次使用，正在下載 AI 模型...'
     },
 
     // SEO and Meta

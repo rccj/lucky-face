@@ -63,7 +63,8 @@ export const en = {
       noFaces: 'No faces detected in the photo',
       cameraAccess: 'Unable to access camera, please check permissions',
       uploadFailed: 'Photo upload failed',
-      loadingAI: 'Loading AI...'
+      loadingAI: 'Loading AI models...',
+      downloadingModels: 'First time use, downloading AI models...'
     },
 
     // SEO and Meta

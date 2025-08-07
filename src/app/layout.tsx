@@ -86,7 +86,7 @@ export default function RootLayout({
                 "多語言支援"
               ],
               "screenshot": "/og-image.jpg",
-              "softwareVersion": "0.0.15"
+              "softwareVersion": "0.0.16"
             })
           }}
         />

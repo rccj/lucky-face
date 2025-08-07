@@ -6,6 +6,7 @@ import { isMobile } from 'react-device-detect';
 import Image from 'next/image';
 import { XMarkIcon } from '@heroicons/react/24/outline';
 import { DetectedFace, detectFaces, loadFaceApiModels, drawFaceBoxes } from '@/lib/faceDetection';
+import * as faceapi from 'face-api.js';
 import { animateWinnerSelection } from '@/lib/lottery';
 import ProductTour from './ProductTour';
 import Header from './Header';
@@ -103,23 +104,19 @@ export default function PhotoLotteryApp() {
   ];
 
   useEffect(() => {
-    const initModels = async () => {
-      setIsModelsLoading(true);
-      try {
-        await loadFaceApiModels();
-      } catch (error) {
-        console.error('Failed to load face detection models:', error);
-        // 模型載入失敗也不應該影響頁面，繼續使用手動調整功能
-      } finally {
-        // 確保無論成功或失敗都會重置載入狀態
-        setIsModelsLoading(false);
-      }
-    };
-    
     // 檢查是否首次使用，啟動產品導覽
     const hasSeenTour = localStorage.getItem('luckyface-tour-completed');
     if (!hasSeenTour) {
       setIsTourActive(true);
+    }
+    
+    // 註冊 Service Worker 來緩存模型檔案
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.register('/sw.js').then(() => {
+        console.log('Service Worker registered for model caching');
+      }).catch((error) => {
+        console.log('Service Worker registration failed:', error);
+      });
     }
     
     // 修復手機視窗高度
@@ -132,7 +129,7 @@ export default function PhotoLotteryApp() {
     window.addEventListener('resize', setVH);
     window.addEventListener('orientationchange', setVH);
     
-    initModels();
+    // 不再在頁面載入時預載模型，改為延遲載入
     
     return () => {
       window.removeEventListener('resize', setVH);
@@ -229,10 +226,20 @@ export default function PhotoLotteryApp() {
     
     setIsProcessing(true);
     
+    // 檢查是否需要顯示模型載入訊息
+    const needsToLoadModels = !faceapi.nets.tinyFaceDetector.params || !faceapi.nets.ssdMobilenetv1.params;
+    if (needsToLoadModels) {
+      setIsModelsLoading(true);
+    }
+    
     // 確保UI先更新loading狀態，再執行heavy computation
     await new Promise(resolve => setTimeout(resolve, 50));
     
     try {
+      // 延遲載入模型 - 只有在用戶點擊偵測時才載入
+      await loadFaceApiModels();
+      setIsModelsLoading(false);
+      
       const faces = await detectFaces(imageRef.current);
       
       setDetectedFaces(faces);
@@ -264,12 +271,18 @@ export default function PhotoLotteryApp() {
       setDetectedFaces([]);
       
       // 先完成 UI 更新
+      setIsModelsLoading(false);
       setIsProcessing(false);
+      
+      // 顯示友好的錯誤訊息
+      if (error instanceof Error && error.message.includes('Failed to load AI models')) {
+        alert(t('error.loadingAI') + ' 將使用手動標記模式。');
+      }
       
       // 如果是真的錯誤，也嘗試打開手動調整
       setShowFaceAdjuster(true);
     }
-  }, [selectedImage, updateCanvasSize]);
+  }, [selectedImage, updateCanvasSize, t]);
 
   const handleStartLottery = useCallback(() => {
     if (detectedFaces.length < 2) {
@@ -398,8 +411,9 @@ export default function PhotoLotteryApp() {
                   )}
                   {isModelsLoading && (
                     <div className="flex flex-col items-center">
-                      <div className="w-6 h-6 border-2 border-gray-400 border-t-transparent rounded-full animate-spin mb-2"></div>
-                      <p className="text-gray-400 font-medium text-sm">{t('error.loadingAI')}</p>
+                      <div className="w-8 h-8 border-3 border-purple-200 border-t-purple-600 rounded-full animate-spin mb-3"></div>
+                      <p className="text-gray-600 font-medium text-sm mb-1">{t('error.downloadingModels')}</p>
+                      <p className="text-gray-400 text-xs">首次使用需要下載 AI 模型，請稍候...</p>
                     </div>
                   )}
                 </div>
@@ -441,10 +455,9 @@ export default function PhotoLotteryApp() {
                 </div>
               )}
             </div>
-            
 
             {selectedImage && detectedFaces.length === 0 && (
-              <div className="text-center mb-6">
+              <div className="text-center mb-6 mt-6">
                 <button
                   type="button"
                   onClick={(e) => {
@@ -458,7 +471,7 @@ export default function PhotoLotteryApp() {
                   aria-label={isProcessing ? t('detecting') : t('detectFaces')}
                   aria-describedby="detect-description"
                 >
-                  {isProcessing ? t('detecting') : t('detectFaces')}
+                  {isModelsLoading ? t('error.downloadingModels') : (isProcessing ? t('detecting') : t('detectFaces'))}
                 </button>
                 <div id="detect-description" className="sr-only">
                   {t('a11y.detectButtonDescription')}
