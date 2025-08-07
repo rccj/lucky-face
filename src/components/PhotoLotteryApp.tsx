@@ -112,10 +112,8 @@ export default function PhotoLotteryApp() {
     
     // 註冊 Service Worker 來緩存模型檔案
     if ('serviceWorker' in navigator) {
-      navigator.serviceWorker.register('/sw.js').then(() => {
-        console.log('Service Worker registered for model caching');
-      }).catch((error) => {
-        console.log('Service Worker registration failed:', error);
+      navigator.serviceWorker.register('/sw.js').catch(() => {
+        // Service Worker 註冊失敗不影響應用運行
       });
     }
     

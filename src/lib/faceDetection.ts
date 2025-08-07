@@ -23,31 +23,48 @@ export async function loadFaceApiModels(): Promise<void> {
   // 先檢查模型是否已經在記憶體中
   if (modelsLoaded || checkModelsLoaded()) {
     modelsLoaded = true;
-    console.log('Models already loaded in memory');
     return;
   }
   
-  const modelUrl = '/models';
+  // 使用 CDN 或本地模型 - 多個備選方案
+  const getCdnUrl = () => {
+    if (process.env.NODE_ENV === 'development') return '/models';
+    
+    // 生產環境優先使用 CDN
+    return process.env.NEXT_PUBLIC_MODELS_CDN_URL || 
+           'https://cdn.jsdelivr.net/gh/justadudewhohacks/face-api.js@master/weights';
+  };
+  
+  const modelUrl = getCdnUrl();
   
   try {
-    console.log('Loading face detection models...');
-    
     // 先載入 TinyFaceDetector (較小)
     if (!faceapi.nets.tinyFaceDetector.params) {
       await faceapi.nets.tinyFaceDetector.loadFromUri(modelUrl);
-      console.log('TinyFaceDetector loaded successfully');
     }
     
     // 再載入 SSD MobileNetv1 (較大)
     if (!faceapi.nets.ssdMobilenetv1.params) {
       await faceapi.nets.ssdMobilenetv1.loadFromUri(modelUrl);
-      console.log('SsdMobilenetv1 loaded successfully');
     }
     
     modelsLoaded = true;
-    console.log('All face detection models loaded successfully');
   } catch (error) {
-    console.error('Failed to load face detection models:', error);
+    console.error(`Failed to load face detection models from ${modelUrl}:`, error);
+    
+    // 如果是生產環境且使用 CDN 失敗，嘗試備用方案
+    if (process.env.NODE_ENV === 'production' && modelUrl.includes('cdn.jsdelivr.net')) {
+      try {
+        const fallbackUrl = 'https://raw.githubusercontent.com/justadudewhohacks/face-api.js/master/weights';
+        await faceapi.nets.tinyFaceDetector.loadFromUri(fallbackUrl);
+        await faceapi.nets.ssdMobilenetv1.loadFromUri(fallbackUrl);
+        modelsLoaded = true;
+        return;
+      } catch (fallbackError) {
+        console.error('Fallback CDN also failed:', fallbackError);
+      }
+    }
+    
     throw new Error(`Failed to load AI models: ${error instanceof Error ? error.message : 'Unknown error'}`);
   }
 }
@@ -119,8 +136,7 @@ export async function detectFaces(imageElement: HTMLImageElement): Promise<Detec
         if (detections.length > 0) {
           break;
         }
-      } catch (error) {
-        console.warn(`Mobile: Detection method ${i + 1} failed:`, error);
+      } catch {
         continue;
       }
     }
@@ -196,7 +212,6 @@ export async function detectFaces(imageElement: HTMLImageElement): Promise<Detec
         break;
       }
     } catch (error) {
-      console.warn(`Detection method ${i + 1} failed:`, error);
       continue;
     }
   }

@@ -1,10 +1,11 @@
 {
   "name": "luckyface",
-  "version": "0.0.17",
+  "version": "0.0.18",
   "private": true,
   "scripts": {
     "dev": "next dev --turbopack",
-    "build": "npm run download-models && next build",
+    "build": "next build",
+    "build:with-models": "npm run download-models && next build",
     "start": "next start",
     "lint": "next lint",
     "download-models": "node scripts/download-models.js"
