@@ -9,6 +9,7 @@ import { animateWinnerSelection } from '@/lib/lottery';
 import ProductTour from './ProductTour';
 import Header from './Header';
 import FaceAdjuster from './FaceAdjuster';
+import LotteryFaceModal from './LotteryFaceModal';
 
 export default function PhotoLotteryApp() {
   const { t } = useTranslation();
@@ -18,6 +19,8 @@ export default function PhotoLotteryApp() {
   const [isProcessing, setIsProcessing] = useState(false);
   const [isAnimating, setIsAnimating] = useState(false);
   const [winnerCount, setWinnerCount] = useState(1);
+  const [currentAnimatingFaces, setCurrentAnimatingFaces] = useState<DetectedFace[]>([]);
+  const [showLotteryModal, setShowLotteryModal] = useState(false);
   const [isModelsLoading, setIsModelsLoading] = useState(false);
   const [isCapturing, setIsCapturing] = useState(false);
   
@@ -253,10 +256,15 @@ export default function PhotoLotteryApp() {
     
     setIsAnimating(true);
     setWinners([]);
+    setShowLotteryModal(true); // 顯示抽獎彈窗
+    setCurrentAnimatingFaces([]); // 清空當前動畫人臉
     
     animateWinnerSelection(
       detectedFaces,
       (currentFaces) => {
+        // 更新當前動畫中的人臉，供彈窗顯示
+        setCurrentAnimatingFaces(currentFaces);
+        
         if (canvasRef.current) {
           updateCanvasSize();
           drawFaceBoxes(canvasRef.current, detectedFaces, currentFaces);
@@ -264,11 +272,15 @@ export default function PhotoLotteryApp() {
       },
       (finalWinners) => {
         setWinners(finalWinners);
+        setCurrentAnimatingFaces(finalWinners); // 最終顯示獲勝者
         setIsAnimating(false);
+        
         if (canvasRef.current) {
           updateCanvasSize();
           drawFaceBoxes(canvasRef.current, detectedFaces, finalWinners);
         }
+        
+        // 移除自動關閉，讓用戶手動控制
       },
       winnerCount
     );
@@ -284,7 +296,7 @@ export default function PhotoLotteryApp() {
     <>
       <Header onStartTour={() => setIsTourActive(true)} />
       
-       <div className={`bg-gray-50 pt-16 ${isMobile ? 'mobile-full-height' : ''}`} style={{ minHeight: isMobile ? 'calc(var(--vh, 1vh) * 100 - 4rem)' : 'calc(100vh - 4rem)' }}>
+       <div className={`bg-gray-50 min-h-screen pt-16 ${isMobile ? 'mobile-full-height' : ''}`}>
         <div className="max-w-6xl mx-auto p-6">
           {/* 簡潔介紹 */}
           <div className="text-center mb-8">
@@ -571,6 +583,16 @@ export default function PhotoLotteryApp() {
                 drawFaceBoxes(canvasRef.current, adjustedFaces, winners);
               }
             }}
+          />
+
+          {/* 抽獎時的放大臉部彈窗 */}
+          <LotteryFaceModal
+            isOpen={showLotteryModal}
+            currentFaces={currentAnimatingFaces}
+            selectedImage={selectedImage}
+            isAnimating={isAnimating}
+            onClose={() => setShowLotteryModal(false)}
+            onRestart={handleStartLottery}
           />
           
           <input

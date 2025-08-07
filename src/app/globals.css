@@ -61,7 +61,7 @@
 }
 
 body {
-  background: var(--background);
+  background: #f9fafb; /* bg-gray-50 */
   color: var(--foreground);
   font-family: var(--font-sans);
   line-height: 1.5;
