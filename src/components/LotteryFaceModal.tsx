@@ -2,6 +2,7 @@
 
 import { useRef, useEffect } from 'react';
 import { DetectedFace } from '@/lib/faceDetection';
+import { useTranslation } from 'react-i18next';
 
 interface LotteryFaceModalProps {
   isOpen: boolean;
@@ -20,6 +21,7 @@ export default function LotteryFaceModal({
   onClose,
   onRestart
 }: LotteryFaceModalProps) {
+  const { t } = useTranslation();
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const imageRef = useRef<HTMLImageElement>(null);
 
@@ -108,7 +110,7 @@ export default function LotteryFaceModal({
         ctx.globalCompositeOperation = 'source-over';
 
         // 添加圓形邊框，顏色與外面的人臉框同步
-        ctx.strokeStyle = isAnimating ? '#dc2626' : '#16a34a'; // 抽獎中：紅色，結果：綠色
+        ctx.strokeStyle = isAnimating ? '#dc2626' : '#16a34a'; // 選擇中：紅色，結果：綠色
         ctx.lineWidth = 6;
         ctx.beginPath();
         ctx.arc(size / 2, size / 2, size * 0.45, 0, Math.PI * 2);
@@ -153,11 +155,8 @@ export default function LotteryFaceModal({
         {/* 標題 */}
         <div className="text-center mb-4">
           <h3 className="text-lg font-bold text-gray-900 mb-1">
-            {isAnimating ? '🎲 抽獎中...' : '🎉 中獎者'}
+            {isAnimating ? t('whoIsLucky') : t('thisLucky')}
           </h3>
-          <p className="text-gray-600 text-sm">
-            {isAnimating ? '正在選擇幸運兒' : '恭喜中獎！'}
-          </p>
         </div>
 
         {/* 人臉顯示區域 */}
@@ -191,12 +190,12 @@ export default function LotteryFaceModal({
           ) : (
             <>
               <div className="text-green-600 font-medium mb-3">
-                ✨ 選中！
+                {t('ding')}
               </div>
               {/* 操作提示 - 固定空間 */}
               <div className="text-xs text-gray-500 space-y-1">
-                <p>💡 點擊照片或按空白鍵重新抽獎</p>
-                <p>💡 點擊空白處或按 ESC 鍵關閉視窗</p>
+                <p>{t('clickPhotoReselect')}</p>
+                <p>{t('clickBlankClose')}</p>
               </div>
             </>
           )}

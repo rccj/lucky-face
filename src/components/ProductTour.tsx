@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 
 interface TourStep {
   title: string;
@@ -17,6 +18,7 @@ interface ProductTourProps {
 }
 
 export default function ProductTour({ steps, isActive, onComplete, onSkip }: ProductTourProps) {
+  const { t } = useTranslation();
   const [currentStep, setCurrentStep] = useState(0);
   
   // 每次重新開啟教學都從第一步開始
@@ -60,13 +62,13 @@ export default function ProductTour({ steps, isActive, onComplete, onSkip }: Pro
           {/* 步驟指示 */}
           <div className="flex items-center justify-between mb-6">
             <div className="text-sm text-gray-500 font-medium">
-              步驟 {currentStep + 1} / {steps.length}
+              {t('step')} {currentStep + 1} / {steps.length}
             </div>
             <button
               onClick={onSkip}
               className="text-sm text-gray-400 hover:text-gray-600 transition-colors"
             >
-              跳過教學
+              {t('skipTutorial')}
             </button>
           </div>
           
@@ -78,7 +80,7 @@ export default function ProductTour({ steps, isActive, onComplete, onSkip }: Pro
                   <div className="text-6xl animate-bounce">📷</div>
                   <div className="bg-gray-100 rounded-2xl p-4 mx-4">
                     <div className="w-full h-32 bg-gray-200 border-2 border-dashed border-gray-400 rounded-xl flex items-center justify-center animate-pulse">
-                      <span className="text-gray-500">點擊上傳</span>
+                      <span className="text-gray-500">{t('selectPhoto')}</span>
                     </div>
                   </div>
                 </div>
@@ -92,7 +94,7 @@ export default function ProductTour({ steps, isActive, onComplete, onSkip }: Pro
                       <div className="absolute top-2 left-2 w-8 h-8 border-2 border-green-500 rounded animate-pulse"></div>
                       <div className="absolute top-4 right-4 w-6 h-6 border-2 border-green-500 rounded animate-pulse" style={{animationDelay: '0.5s'}}></div>
                       <div className="absolute bottom-3 left-6 w-7 h-7 border-2 border-green-500 rounded animate-pulse" style={{animationDelay: '1s'}}></div>
-                      <span className="text-sm text-gray-600">AI 偵測中...</span>
+                      <span className="text-sm text-gray-600">{t('detecting')}</span>
                     </div>
                   </div>
                 </div>
@@ -100,13 +102,13 @@ export default function ProductTour({ steps, isActive, onComplete, onSkip }: Pro
               
               {currentStep === 2 && (
                 <div className="space-y-4">
-                  <div className="text-6xl animate-bounce">🎯</div>
+                  <div className="text-6xl animate-pulse">🎲</div>
                   <div className="bg-gray-100 rounded-2xl p-4 mx-4">
-                    <div className="flex items-center justify-center space-x-2">
-                      <span className="text-sm">中獎人數:</span>
-                      <div className="w-12 h-8 bg-white border-2 border-gray-300 rounded flex items-center justify-center animate-pulse">
-                        <span className="text-lg font-bold">1</span>
-                      </div>
+                    <div className="relative w-full h-32 bg-yellow-50 rounded-xl flex items-center justify-center">
+                      <div className="absolute top-2 left-2 w-8 h-8 border-2 border-red-500 rounded animate-pulse bg-red-100"></div>
+                      <div className="absolute top-4 right-4 w-6 h-6 border-2 border-green-500 rounded animate-pulse" style={{animationDelay: '0.3s'}}></div>
+                      <div className="absolute bottom-3 left-6 w-7 h-7 border-2 border-red-500 rounded animate-pulse bg-red-100" style={{animationDelay: '0.6s'}}></div>
+                      <span className="text-sm text-gray-600">{t('selecting')}</span>
                     </div>
                   </div>
                 </div>
@@ -114,24 +116,12 @@ export default function ProductTour({ steps, isActive, onComplete, onSkip }: Pro
               
               {currentStep === 3 && (
                 <div className="space-y-4">
-                  <div className="text-6xl animate-bounce">🎲</div>
+                  <div className="text-6xl animate-bounce">🎉</div>
                   <div className="bg-gray-100 rounded-2xl p-4 mx-4">
-                    <div className="relative w-full h-32 bg-yellow-50 rounded-xl flex items-center justify-center">
-                      <div className="absolute top-2 left-2 w-8 h-8 border-2 border-red-500 rounded animate-pulse bg-red-100"></div>
-                      <div className="absolute top-4 right-4 w-6 h-6 border-2 border-green-500 rounded animate-pulse" style={{animationDelay: '0.3s'}}></div>
-                      <div className="absolute bottom-3 left-6 w-7 h-7 border-2 border-red-500 rounded animate-pulse bg-red-100" style={{animationDelay: '0.6s'}}></div>
-                      <span className="text-sm text-gray-600">抽籤中...</span>
-                    </div>
-                  </div>
-                </div>
-              )}
-              
-              {currentStep === 4 && (
-                <div className="space-y-4">
-                  <div className="text-6xl animate-bounce">💾</div>
-                  <div className="bg-gray-100 rounded-2xl p-4 mx-4">
-                    <div className="bg-green-500 text-white px-4 py-2 rounded-xl text-center animate-pulse">
-                      📸 下載照片
+                    <div className="relative w-full h-32 bg-green-50 rounded-xl flex items-center justify-center">
+                      <div className="absolute top-2 left-2 w-8 h-8 border-2 border-green-500 rounded bg-green-100"></div>
+                      <div className="absolute bottom-3 right-4 w-6 h-6 border-2 border-green-500 rounded bg-green-100"></div>
+                      <span className="text-sm text-green-600 font-semibold">{t('congratsTitle')}!</span>
                     </div>
                   </div>
                 </div>
@@ -152,14 +142,14 @@ export default function ProductTour({ steps, isActive, onComplete, onSkip }: Pro
               disabled={currentStep === 0}
               className="px-5 py-2.5 text-gray-600 hover:text-gray-800 disabled:opacity-50 disabled:cursor-not-allowed transition-colors font-medium"
             >
-              上一步
+              {t('previous')}
             </button>
             
             <button
               onClick={handleNext}
               className="px-6 py-2.5 bg-gradient-to-r from-blue-500 to-purple-500 text-white rounded-xl hover:from-blue-600 hover:to-purple-600 transition-all font-medium shadow-lg"
             >
-              {currentStep === steps.length - 1 ? '完成' : '下一步'}
+              {currentStep === steps.length - 1 ? t('complete') : t('next')}
             </button>
           </div>
         </div>

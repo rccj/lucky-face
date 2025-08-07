@@ -10,6 +10,7 @@ import ProductTour from './ProductTour';
 import Header from './Header';
 import FaceAdjuster from './FaceAdjuster';
 import LotteryFaceModal from './LotteryFaceModal';
+import { Toaster } from './ui/sonner';
 
 export default function PhotoLotteryApp() {
   const { t } = useTranslation();
@@ -75,34 +76,28 @@ export default function PhotoLotteryApp() {
   // 定義產品導覽步驟
   const tourSteps = [
     {
-      title: '上傳照片',
-      content: '點擊這裡上傳團體照片，AI 會自動辨識所有人臉',
+      title: t('uploadPhotoTitle'),
+      content: t('uploadPhotoDesc'),
       icon: '📷',
       animation: 'animate-pulse'
     },
     {
-      title: '偵測人臉',
-      content: '讓 AI 幫你找出照片中的每一張臉',
+      title: t('detectFaceTitle'),
+      content: t('detectFaceDesc'),
       icon: '🔍',
       animation: 'animate-spin'
     },
     {
-      title: '手動調整（可選）',
-      content: '如果需要，可以手動調整人臉框位置或新增/刪除人臉框',
-      icon: '✏️',
-      animation: 'animate-bounce'
-    },
-    {
-      title: '設定人數',
-      content: '選擇要抽出幾位幸運兒',
-      icon: '🎯',
-      animation: 'animate-bounce'
-    },
-    {
-      title: '開始抽籤',
-      content: '緊張刺激的時刻到了！點擊空白鍵或任意位置重新抽籤',
+      title: t('randomSelectTitle'),
+      content: t('randomSelectDesc'),
       icon: '🎲',
       animation: 'animate-pulse'
+    },
+    {
+      title: t('congratsTitle'),
+      content: t('congratsDesc'),
+      icon: '🎉',
+      animation: 'animate-bounce'
     },
   ];
 
@@ -178,7 +173,7 @@ export default function PhotoLotteryApp() {
       }
     } catch (error) {
       console.error('Failed to start camera:', error);
-      alert('無法啟動相機，請檢查權限設定');
+      alert(t('error.cameraAccess'));
       setIsCapturing(false); // 如果失敗，重置狀態
     }
   }, []);
@@ -327,7 +322,7 @@ export default function PhotoLotteryApp() {
           {/* 簡潔介紹 */}
           <div className="text-center mb-8">
             <p className="text-lg text-gray-600 font-light">
-              上傳照片，AI 自動識別人臉，快速進行抽獎
+              {t('subtitle')}
             </p>
           </div>
           <div className="max-w-2xl mx-auto">
@@ -395,14 +390,13 @@ export default function PhotoLotteryApp() {
                   <div className={`text-6xl mb-4 ${isModelsLoading ? 'text-gray-400' : 'text-gray-300'}`}>📷</div>
                   {!isModelsLoading && (
                     <>
-                      <p className="text-gray-500 font-medium">Add Photo</p>
-                      <p className="text-gray-400 text-sm mt-1">Click to select or capture</p>
+                      <p className="text-gray-500 font-medium">{t('selectPhoto')}</p>
                     </>
                   )}
                   {isModelsLoading && (
                     <div className="flex flex-col items-center">
                       <div className="w-6 h-6 border-2 border-gray-400 border-t-transparent rounded-full animate-spin mb-2"></div>
-                      <p className="text-gray-400 font-medium text-sm">Loading AI...</p>
+                      <p className="text-gray-400 font-medium text-sm">{t('error.loadingAI')}</p>
                     </div>
                   )}
                 </div>
@@ -455,7 +449,7 @@ export default function PhotoLotteryApp() {
                   className="w-full max-w-md px-6 py-4 bg-gray-900 text-white rounded-2xl hover:bg-gray-800 transition-all duration-200 font-medium disabled:opacity-50 disabled:cursor-not-allowed"
                   data-tour="detect-button"
                 >
-                  {isProcessing ? 'Detecting...' : 'Detect Faces'}
+                  {isProcessing ? t('detecting') : t('detectFaces')}
                 </button>
               </div>
             )}
@@ -471,14 +465,14 @@ export default function PhotoLotteryApp() {
                         onClick={handleOpenFaceAdjuster}
                         className="px-4 py-2 text-sm bg-blue-500 text-white rounded-xl hover:bg-blue-600 transition-colors"
                       >
-                        ✏️ 調整
+                        ✏️ {t('adjust')}
                       </button>
                     </div>
                     
                     {/* Winners 控制區 */}
                     <div className="flex items-center justify-center gap-3 mb-4">
                       <label className="text-gray-600 font-medium text-sm">
-                        Winner:
+                        {t('luckyPerson')}:
                       </label>
                       <input
                         type="number"
@@ -500,11 +494,11 @@ export default function PhotoLotteryApp() {
                       onClick={handleOpenFaceAdjuster}
                       className="px-4 py-2 text-sm bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors"
                     >
-                      ✏️ 調整
+                      ✏️ {t('adjust')}
                     </button>
                     
                     <label className="text-gray-600 font-medium">
-                      Winner:
+                      {t('luckyPerson')}:
                     </label>
                     <input
                       type="number"
@@ -532,9 +526,9 @@ export default function PhotoLotteryApp() {
                   data-tour="lottery-button"
                 >
                   {isAnimating ? (
-                    <span className="animate-pulse">Drawing...</span>
+                    <span className="animate-pulse">{t('selecting')}</span>
                   ) : (
-                    'Start Lottery'
+                    t('selectLucky')
                   )}
                 </button>
               </div>
@@ -556,8 +550,8 @@ export default function PhotoLotteryApp() {
                 <div className={`${isMobile ? 'space-y-3' : 'space-y-4'}`}>
                   {!isMobile && (
                     <div className="text-center mb-6">
-                      <h3 className="text-xl font-bold text-gray-900 mb-2">選擇照片方式</h3>
-                      <p className="text-gray-600">請選擇您想要的照片來源</p>
+                      <h3 className="text-xl font-bold text-gray-900 mb-2">{t('selectPhoto')}</h3>
+                      <p className="text-gray-600">{t('choosePhoto')}</p>
                     </div>
                   )}
                   
@@ -571,7 +565,7 @@ export default function PhotoLotteryApp() {
                     }}
                     className="w-full px-6 py-4 bg-gray-900 text-white rounded-2xl hover:bg-gray-800 transition-all duration-200 font-medium"
                   >
-                    選擇照片
+                    {t('choosePhoto')}
                   </button>
                   
                   <button
@@ -581,14 +575,14 @@ export default function PhotoLotteryApp() {
                     }}
                     className="w-full px-6 py-4 bg-gray-100 text-gray-900 rounded-2xl hover:bg-gray-200 transition-all duration-200 font-medium"
                   >
-                    拍照
+                    {t('takePhoto')}
                   </button>
                   
                   <button
                     onClick={() => setShowUploadOptions(false)}
                     className="w-full px-6 py-4 text-gray-600 rounded-2xl hover:bg-gray-50 transition-all duration-200 font-medium"
                   >
-                    取消
+                    {t('cancel')}
                   </button>
                 </div>
               </div>
@@ -645,6 +639,15 @@ export default function PhotoLotteryApp() {
         onSkip={() => {
           localStorage.setItem('luckyface-tour-completed', 'true');
           setIsTourActive(false);
+        }}
+      />
+      
+      <Toaster 
+        position="top-center"
+        toastOptions={{
+          style: {
+            zIndex: 9999,
+          },
         }}
       />
     </>

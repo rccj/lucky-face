@@ -4,6 +4,8 @@ import { useState, useRef, useEffect, useCallback } from 'react';
 import * as faceapi from 'face-api.js';
 import { isMobile } from 'react-device-detect';
 import { DetectedFace } from '@/lib/faceDetection';
+import { toast } from 'sonner';
+import { useTranslation } from 'react-i18next';
 
 interface FaceAdjusterProps {
   isOpen: boolean;
@@ -20,6 +22,7 @@ export default function FaceAdjuster({
   faces, 
   onSave 
 }: FaceAdjusterProps) {
+  const { t } = useTranslation();
   const [adjustableFaces, setAdjustableFaces] = useState<DetectedFace[]>([]);
   const [selectedFaceIndex, setSelectedFaceIndex] = useState<number>(-1);
   const [isDragging, setIsDragging] = useState(false);
@@ -37,6 +40,14 @@ export default function FaceAdjuster({
     if (isOpen) {
       setAdjustableFaces([...faces]);
       setSelectedFaceIndex(-1);
+      
+      // 如果沒有偵測到人臉，顯示 toast 提示
+      if (faces.length === 0) {
+        toast.info(t('noFacesDetected'), {
+          description: t('manuallyMarkLucky'),
+          duration: 3000
+        });
+      }
     }
   }, [isOpen, faces]);
 
@@ -256,8 +267,8 @@ export default function FaceAdjuster({
         onClick={(e) => e.stopPropagation()}
       >
         <div className="text-center mb-6">
-          <h3 className="text-xl font-bold text-gray-900 mb-2">✏️ 手動調整人臉框</h3>
-          <p className="text-gray-600">點擊並拖拽來調整人臉框位置和大小</p>
+          <h3 className="text-xl font-bold text-gray-900 mb-2">{t('adjustFaces')}</h3>
+          <p className="text-gray-600">{t('dragToAdjust')}</p>
         </div>
         
         <div className={`space-y-${isMobile ? '4' : '6'}`}>
@@ -452,21 +463,6 @@ export default function FaceAdjuster({
             })}
           </div>
           
-          {/* 提示訊息區域 */}
-          {adjustableFaces.length === 0 && (
-            <div className={`bg-blue-50 border border-blue-200 rounded-2xl ${isMobile ? 'p-4 mb-4' : 'p-6 mb-6'}`}>
-              <div className="text-center">
-                <h4 className={`text-blue-800 font-semibold ${isMobile ? 'text-base mb-2' : 'text-lg mb-3'}`}>🤖 AI 未能自動辨識人臉</h4>
-                <p className={`text-blue-600 ${isMobile ? 'text-sm mb-3' : 'mb-4'}`}>
-                  別擔心！您可以手動新增人臉框來進行抽獎
-                </p>
-                <div className={`text-blue-500 ${isMobile ? 'text-xs space-y-1' : 'text-sm space-y-2'}`}>
-                  <p>💡 點擊「➕ 新增人臉框」來手動標記每張臉</p>
-                  <p>💡 拖拽邊框調整位置和大小</p>
-                </div>
-              </div>
-            </div>
-          )}
           
           {/* 操作按鈕 */}
           <div className="flex flex-col gap-3">
@@ -475,14 +471,14 @@ export default function FaceAdjuster({
                 onClick={handleAddFace}
                 className={`flex-1 ${isMobile ? 'px-4 py-3 text-sm' : 'px-4 py-3'} bg-green-500 text-white rounded-2xl hover:bg-green-600 transition-all duration-200 font-medium`}
               >
-                ➕ 新增人臉框
+{t('addFace')}
               </button>
               <button
                 onClick={handleDeleteFace}
                 disabled={selectedFaceIndex < 0}
                 className={`flex-1 ${isMobile ? 'px-4 py-3 text-sm' : 'px-4 py-3'} bg-red-500 text-white rounded-2xl hover:bg-red-600 transition-all duration-200 font-medium disabled:opacity-50 disabled:cursor-not-allowed`}
               >
-                ➖ 刪除選中
+{t('deleteFace')}
               </button>
             </div>
             
@@ -491,13 +487,13 @@ export default function FaceAdjuster({
                 onClick={onClose}
                 className={`flex-1 ${isMobile ? 'px-4 py-3 text-sm' : 'px-4 py-3'} bg-gray-100 text-gray-600 rounded-2xl hover:bg-gray-200 transition-all duration-200 font-medium`}
               >
-                取消
+{t('cancel')}
               </button>
               <button
                 onClick={handleSave}
                 className={`flex-1 ${isMobile ? 'px-4 py-3 text-sm' : 'px-4 py-3'} bg-gray-900 text-white rounded-2xl hover:bg-gray-800 transition-all duration-200 font-medium`}
               >
-                💾 保存調整
+{t('save')}
               </button>
             </div>
           </div>
