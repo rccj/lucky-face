@@ -16,7 +16,7 @@ let modelsLoaded = false;
 
 // 檢查模型是否已經載入到記憶體中
 function checkModelsLoaded(): boolean {
-  return faceapi.nets.tinyFaceDetector.params && faceapi.nets.ssdMobilenetv1.params;
+  return !!(faceapi.nets.tinyFaceDetector.params && faceapi.nets.ssdMobilenetv1.params);
 }
 
 export async function loadFaceApiModels(): Promise<void> {

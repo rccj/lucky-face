@@ -21,7 +21,7 @@ export default function PhotoLotteryApp() {
   const [winners, setWinners] = useState<DetectedFace[]>([]);
   const [isProcessing, setIsProcessing] = useState(false);
   const [isAnimating, setIsAnimating] = useState(false);
-  const [winnerCount, setWinnerCount] = useState(1);
+  const [winnerCount] = useState(1);
   const [currentAnimatingFaces, setCurrentAnimatingFaces] = useState<DetectedFace[]>([]);
   const [showLotteryModal, setShowLotteryModal] = useState(false);
   const [isModelsLoading, setIsModelsLoading] = useState(false);
