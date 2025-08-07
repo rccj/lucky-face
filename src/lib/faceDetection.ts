@@ -1,4 +1,5 @@
 import * as faceapi from 'face-api.js';
+import { isMobile } from 'react-device-detect';
 
 export interface DetectedFace {
   id: string;
@@ -56,7 +57,64 @@ export async function detectFaces(imageElement: HTMLImageElement): Promise<Detec
     await loadFaceApiModels();
   }
   
-  console.log(`Starting face detection on image: ${imageElement.naturalWidth}x${imageElement.naturalHeight}`);
+  // 使用 react-device-detect 檢測手機裝置
+  
+  // 手機版使用簡化的偵測方法，避免記憶體問題
+  if (isMobile) {
+    
+    // 只使用最基本的偵測方法
+    const detectionMethods = [
+      // 方法 1: SSD MobileNet (較高信心度) - 原始圖像
+      () => faceapi.detectAllFaces(
+        imageElement,
+        new faceapi.SsdMobilenetv1Options({ minConfidence: 0.5 })
+      ),
+      // 方法 2: Tiny Face Detector (較低資源使用) - 原始圖像
+      () => faceapi.detectAllFaces(
+        imageElement,
+        new faceapi.TinyFaceDetectorOptions({
+          inputSize: 416, // 較小的輸入尺寸
+          scoreThreshold: 0.5
+        })
+      )
+    ];
+    
+    let bestDetections: faceapi.FaceDetection[] = [];
+    
+    for (let i = 0; i < detectionMethods.length; i++) {
+      try {
+        const detections = await detectionMethods[i]();
+        
+        if (detections.length > bestDetections.length) {
+          bestDetections = detections;
+        }
+        
+        // 手機版如果找到人臉就提早結束，節省資源
+        if (detections.length > 0) {
+          break;
+        }
+      } catch (error) {
+        console.warn(`Mobile: Detection method ${i + 1} failed:`, error);
+        continue;
+      }
+    }
+    
+    // 手機版也需要去重處理
+    const filteredDetections = removeDuplicateDetections(bestDetections);
+    
+    return filteredDetections.map((detection, index) => ({
+      id: `face-${index}`,
+      box: {
+        x: detection.box.x,
+        y: detection.box.y,
+        width: detection.box.width,
+        height: detection.box.height,
+      },
+      detection,
+    }));
+  }
+  
+  // 桌面版使用完整的偵測方法
   
   // 預處理圖像以提高偵測效果
   const preprocessedCanvas = preprocessImage(imageElement);
@@ -101,18 +159,14 @@ export async function detectFaces(imageElement: HTMLImageElement): Promise<Detec
   // 嘗試不同的偵測方法，選擇找到最多人臉的結果
   for (let i = 0; i < detectionMethods.length; i++) {
     try {
-      console.log(`Trying detection method ${i + 1}...`);
       const detections = await detectionMethods[i]();
-      console.log(`Detection method ${i + 1} found ${detections.length} faces`);
       
       if (detections.length > bestDetections.length) {
         bestDetections = detections;
-        console.log(`New best result: ${detections.length} faces`);
       }
       
       // 如果找到足夠多的人臉，可以提早結束
       if (detections.length >= 5) {
-        console.log(`Found ${detections.length} faces, stopping early`);
         break;
       }
     } catch (error) {
@@ -123,8 +177,6 @@ export async function detectFaces(imageElement: HTMLImageElement): Promise<Detec
   
   // 去除重複的人臉檢測（基於位置相似度）
   const filteredDetections = removeDuplicateDetections(bestDetections);
-  
-  console.log(`Final detection result: ${filteredDetections.length} faces found (${bestDetections.length - filteredDetections.length} duplicates removed)`);
   
   return filteredDetections.map((detection, index) => ({
     id: `face-${index}`,

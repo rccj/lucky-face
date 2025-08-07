@@ -24,6 +24,7 @@ export default function PhotoLotteryApp() {
   const [isModelsLoading, setIsModelsLoading] = useState(false);
   const [isCapturing, setIsCapturing] = useState(false);
   
+  
   // 動態調整 video 比例
   useEffect(() => {
     const video = videoRef.current;
@@ -112,8 +113,7 @@ export default function PhotoLotteryApp() {
         await loadFaceApiModels();
       } catch (error) {
         console.error('Failed to load face detection models:', error);
-        // 模型載入失敗也不應該影響頁面，只是禁用檢測功能
-        alert('AI 模型載入失敗，請重新整理頁面或檢查網路連線');
+        // 模型載入失敗也不應該影響頁面，繼續使用手動調整功能
       } finally {
         // 確保無論成功或失敗都會重置載入狀態
         setIsModelsLoading(false);
@@ -232,8 +232,13 @@ export default function PhotoLotteryApp() {
     if (!selectedImage || !imageRef.current) return;
     
     setIsProcessing(true);
+    
+    // 確保UI先更新loading狀態，再執行heavy computation
+    await new Promise(resolve => setTimeout(resolve, 50));
+    
     try {
       const faces = await detectFaces(imageRef.current);
+      
       setDetectedFaces(faces);
       
       if (canvasRef.current && imageRef.current) {
@@ -241,18 +246,39 @@ export default function PhotoLotteryApp() {
         drawFaceBoxes(canvasRef.current, faces);
       }
       
+      // 手機版主動觸發垃圾回收
+      if (isMobile && typeof window !== 'undefined' && 'gc' in window) {
+        try {
+          (window as any).gc();
+        } catch (e) {
+          // 忽略垃圾回收錯誤
+        }
+      }
+      
+      // 先完成 UI 更新，再決定是否開啟手動調整
+      setIsProcessing(false);
+      
       if (faces.length === 0) {
-        alert(t('error.noFaces'));
+        // 沒有辨識到人臉，立即開啟手動調整模式
+        setShowFaceAdjuster(true);
       }
     } catch (error) {
       console.error('Face detection failed:', error);
-      alert(t('error.uploadFailed'));
+      // 設置空的人臉陣列，確保 UI 正常顯示
+      setDetectedFaces([]);
+      
+      // 先完成 UI 更新
+      setIsProcessing(false);
+      
+      // 如果是真的錯誤，也嘗試打開手動調整
+      setShowFaceAdjuster(true);
     }
-    setIsProcessing(false);
   }, [selectedImage, t, updateCanvasSize]);
 
   const handleStartLottery = useCallback(() => {
-    if (detectedFaces.length === 0) return;
+    if (detectedFaces.length < 2) {
+      return;
+    }
     
     setIsAnimating(true);
     setWinners([]);
@@ -501,7 +527,7 @@ export default function PhotoLotteryApp() {
                     e.stopPropagation();
                     handleStartLottery();
                   }}
-                  disabled={isAnimating}
+                  disabled={isAnimating || detectedFaces.length < 2}
                   className={`${isMobile ? 'px-6 py-3 text-sm' : 'px-8 py-4'} bg-gray-900 text-white rounded-2xl hover:bg-gray-800 transition-all duration-200 font-medium disabled:opacity-50 disabled:cursor-not-allowed`}
                   data-tour="lottery-button"
                 >

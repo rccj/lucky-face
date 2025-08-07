@@ -9,7 +9,7 @@ interface HeaderProps {
 }
 
 export default function Header({ onStartTour }: HeaderProps) {
-  const { t, i18n } = useTranslation();
+  const { i18n } = useTranslation();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isScrolled, setIsScrolled] = useState(false);
 

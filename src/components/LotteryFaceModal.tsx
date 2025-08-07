@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useRef, useEffect } from 'react';
+import { useRef, useEffect } from 'react';
 import { DetectedFace } from '@/lib/faceDetection';
 
 interface LotteryFaceModalProps {
@@ -78,7 +78,7 @@ export default function LotteryFaceModal({
 
         // 計算目標位置，保持比例並居中
         const aspectRatio = sourceWidth / sourceHeight;
-        let destWidth, destHeight, destX, destY;
+        let destWidth, destHeight;
 
         if (aspectRatio > 1) {
           // 寬度較大
@@ -90,8 +90,8 @@ export default function LotteryFaceModal({
           destWidth = destHeight * aspectRatio;
         }
 
-        destX = (size - destWidth) / 2;
-        destY = (size - destHeight) / 2;
+        const destX = (size - destWidth) / 2;
+        const destY = (size - destHeight) / 2;
 
         // 繪製人臉區域
         ctx.drawImage(
