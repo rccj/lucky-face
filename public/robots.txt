@@ -1,0 +1,5 @@
+User-agent: *
+Allow: /
+
+# Disallow AI models directory to prevent unnecessary crawling
+Disallow: /models/

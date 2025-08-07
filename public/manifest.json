@@ -1,0 +1,19 @@
+{
+  "name": "LuckyFace - 智能幸運兒抽選器",
+  "short_name": "LuckyFace",
+  "description": "AI人臉識別隨機抽獎工具，上傳照片自動選出幸運兒",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#7C3AED",
+  "orientation": "portrait-primary",
+  "categories": ["entertainment", "utilities", "productivity"],
+  "lang": "zh-TW",
+  "icons": [
+    {
+      "src": "/icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml"
+    }
+  ]
+}

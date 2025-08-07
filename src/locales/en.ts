@@ -64,6 +64,29 @@ export const en = {
       cameraAccess: 'Unable to access camera, please check permissions',
       uploadFailed: 'Photo upload failed',
       loadingAI: 'Loading AI...'
+    },
+
+    // SEO and Meta
+    seo: {
+      title: 'LuckyFace - AI Lucky Face Selector | Face Recognition Random Draw',
+      description: 'LuckyFace AI Lucky Face Selector - Upload group photos, AI automatically detects faces, randomly selects Lucky Face! Perfect for events, parties, team activities. Supports multiple faces, fair and random selection.',
+      keywords: 'Lucky Face,lottery,random selection,face recognition,AI,group photo,event lottery,LuckyFace',
+      ogTitle: 'LuckyFace - AI Lucky Face Selector | Face Recognition Random Draw',
+      ogDescription: 'Upload group photos, AI automatically detects faces, randomly selects Lucky Face! Perfect for events, parties, team activities.',
+      twitterTitle: 'LuckyFace - AI Lucky Face Selector',
+      twitterDescription: 'AI face recognition, randomly select Lucky Face! Perfect lottery tool for events.',
+      appName: 'LuckyFace - AI Lucky Face Selector',
+      appShortName: 'LuckyFace',
+      appDescription: 'AI face recognition random lottery tool, upload photos to automatically select Lucky Face'
+    },
+
+    // Accessibility
+    a11y: {
+      mainHeading: 'LuckyFace - AI Lucky Face Selector',
+      appLabel: 'Lucky Face selection tool',
+      uploadedImageAlt: 'Uploaded group photo, waiting for face recognition and Lucky Face selection',
+      detectButtonDescription: 'Use AI to automatically detect and mark all faces in the photo',
+      lotteryButtonDescription: 'Start randomly selecting Lucky Face, all detected faces have equal chance'
     }
   }
 };

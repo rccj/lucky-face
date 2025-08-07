@@ -1,6 +1,7 @@
 'use client';
 
 import { useRef, useEffect } from 'react';
+import Image from 'next/image';
 import { DetectedFace } from '@/lib/faceDetection';
 import { useTranslation } from 'react-i18next';
 
@@ -204,11 +205,14 @@ export default function LotteryFaceModal({
 
       {/* 隱藏的圖片元素用於繪製 */}
       {selectedImage && (
-        <img
+        <Image
           ref={imageRef}
           src={selectedImage}
-          alt="Source"
+          alt="Source image for face extraction"
+          width={800}
+          height={600}
           className="hidden"
+          unoptimized
         />
       )}
     </div>

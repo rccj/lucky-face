@@ -1,7 +1,12 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
-  /* config options here */
+  images: {
+    dangerouslyAllowSVG: true,
+    unoptimized: true, // For data URLs and blob URLs
+    loader: 'custom',
+    loaderFile: './src/lib/image-loader.ts'
+  }
 };
 
 export default nextConfig;

@@ -64,6 +64,29 @@ export const zh = {
       cameraAccess: '無法啟動相機，請檢查權限設定',
       uploadFailed: '照片上傳失敗',
       loadingAI: 'Loading AI...'
+    },
+
+    // SEO and Meta
+    seo: {
+      title: 'LuckyFace - 智能幸運兒抽選器 | AI人臉識別隨機抽獎',
+      description: 'LuckyFace 智能幸運兒抽選器 - 上傳團體照片，AI自動偵測人臉，隨機選出幸運兒！完美適用於活動、聚會、團隊抽獎等場合。支援多人照片，公平公正的隨機選擇。',
+      keywords: '幸運兒,抽獎,隨機選擇,人臉識別,AI,團體照,活動抽獎,LuckyFace',
+      ogTitle: 'LuckyFace - 智能幸運兒抽選器 | AI人臉識別隨機抽獎',
+      ogDescription: '上傳團體照片，AI自動偵測人臉，隨機選出幸運兒！完美適用於活動、聚會、團隊抽獎等場合。',
+      twitterTitle: 'LuckyFace - 智能幸運兒抽選器',
+      twitterDescription: 'AI人臉識別，隨機選出幸運兒！完美的活動抽獎工具。',
+      appName: 'LuckyFace - 智能幸運兒抽選器',
+      appShortName: 'LuckyFace',
+      appDescription: 'AI人臉識別隨機抽獎工具，上傳照片自動選出幸運兒'
+    },
+
+    // Accessibility
+    a11y: {
+      mainHeading: 'LuckyFace - 智能幸運兒抽選器',
+      appLabel: '幸運兒抽選工具',
+      uploadedImageAlt: '已上傳的團體照片，等待進行人臉識別和幸運兒抽選',
+      detectButtonDescription: '使用 AI 自動偵測照片中的所有人臉並標記位置',
+      lotteryButtonDescription: '開始隨機選擇幸運兒，所有偵測到的人臉都有相等機會被選中'
     }
   }
 };

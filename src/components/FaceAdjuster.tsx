@@ -3,6 +3,7 @@
 import { useState, useRef, useEffect, useCallback } from 'react';
 import * as faceapi from 'face-api.js';
 import { isMobile } from 'react-device-detect';
+import Image from 'next/image';
 import { DetectedFace } from '@/lib/faceDetection';
 import { toast } from 'sonner';
 import { useTranslation } from 'react-i18next';
@@ -49,7 +50,7 @@ export default function FaceAdjuster({
         });
       }
     }
-  }, [isOpen, faces]);
+  }, [isOpen, faces, t]);
 
   // 處理人臉框拖拽和縮放
   useEffect(() => {
@@ -281,15 +282,18 @@ export default function FaceAdjuster({
               }
             }}
           >
-            <img
+            <Image
               ref={adjustImageRef}
               src={selectedImage}
-              alt="調整人臉框"
+              alt={t('a11y.uploadedImageAlt')}
+              width={800}
+              height={600}
               className={`w-full object-contain rounded-lg ${isMobile ? 'max-h-80' : 'max-h-[500px]'}`}
               style={{ maxWidth: '100%' }}
               onLoad={() => {
                 setAdjustableFaces(prev => [...prev]);
               }}
+              unoptimized
             />
             
             {/* 可拖拽的人臉框覆蓋層 */}

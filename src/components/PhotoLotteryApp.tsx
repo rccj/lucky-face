@@ -3,6 +3,7 @@
 import { useState, useRef, useCallback, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { isMobile } from 'react-device-detect';
+import Image from 'next/image';
 import { XMarkIcon } from '@heroicons/react/24/outline';
 import { DetectedFace, detectFaces, loadFaceApiModels, drawFaceBoxes } from '@/lib/faceDetection';
 import { animateWinnerSelection } from '@/lib/lottery';
@@ -176,7 +177,7 @@ export default function PhotoLotteryApp() {
       alert(t('error.cameraAccess'));
       setIsCapturing(false); // 如果失敗，重置狀態
     }
-  }, []);
+  }, [t]);
 
   const capturePhoto = useCallback(() => {
     const video = videoRef.current;
@@ -244,8 +245,8 @@ export default function PhotoLotteryApp() {
       // 手機版主動觸發垃圾回收
       if (isMobile && typeof window !== 'undefined' && 'gc' in window) {
         try {
-          (window as any).gc();
-        } catch (e) {
+          (window as typeof window & { gc(): void }).gc();
+        } catch {
           // 忽略垃圾回收錯誤
         }
       }
@@ -268,7 +269,7 @@ export default function PhotoLotteryApp() {
       // 如果是真的錯誤，也嘗試打開手動調整
       setShowFaceAdjuster(true);
     }
-  }, [selectedImage, t, updateCanvasSize]);
+  }, [selectedImage, updateCanvasSize]);
 
   const handleStartLottery = useCallback(() => {
     if (detectedFaces.length < 2) {
@@ -317,17 +318,18 @@ export default function PhotoLotteryApp() {
     <>
       <Header onStartTour={() => setIsTourActive(true)} />
       
-       <div className={`bg-gray-50 min-h-screen pt-16 ${isMobile ? 'mobile-full-height' : ''}`}>
-        <div className="max-w-6xl mx-auto p-6">
+       <main className={`bg-gray-50 min-h-screen pt-16 ${isMobile ? 'mobile-full-height' : ''}`}>
+        <section className="max-w-6xl mx-auto p-6">
           {/* 簡潔介紹 */}
-          <div className="text-center mb-8">
+          <section className="text-center mb-8">
+            <h1 className="sr-only">{t('a11y.mainHeading')}</h1>
             <p className="text-lg text-gray-600 font-light">
               {t('subtitle')}
             </p>
-          </div>
-          <div className="max-w-2xl mx-auto">
+          </section>
+          <section className="max-w-2xl mx-auto">
             {/* 主功能區域 */}
-            <div className="bg-white rounded-3xl shadow-xl p-8 relative overflow-hidden">
+            <article className="bg-white rounded-3xl shadow-xl p-8 relative overflow-hidden" role="application" aria-label={t('a11y.appLabel')}>
             {/* 裝飾性元素 */}
             <div className="absolute top-6 right-6 w-3 h-3 bg-gray-400 rounded-full"></div>
             
@@ -403,14 +405,18 @@ export default function PhotoLotteryApp() {
                 </div>
               ) : (
                 <div className="relative">
-                  <img
+                  <Image
                     ref={imageRef}
                     src={selectedImage}
-                    alt="Selected"
+                    alt={t('a11y.uploadedImageAlt')}
+                    width={800}
+                    height={600}
                     className={`w-full rounded-2xl transition-all duration-300 ${isProcessing ? 'opacity-60' : ''} ${isMobile ? 'max-h-96' : 'max-h-[600px]'} object-contain`}
                     onLoad={() => {
                       updateCanvasSize();
                     }}
+                    priority
+                    unoptimized
                   />
                   <canvas
                     ref={canvasRef}
@@ -449,9 +455,14 @@ export default function PhotoLotteryApp() {
                   disabled={isProcessing || isAnimating || isModelsLoading}
                   className="w-full max-w-md px-6 py-4 bg-gray-900 text-white rounded-2xl hover:bg-gray-800 transition-all duration-200 font-medium disabled:opacity-50 disabled:cursor-not-allowed"
                   data-tour="detect-button"
+                  aria-label={isProcessing ? t('detecting') : t('detectFaces')}
+                  aria-describedby="detect-description"
                 >
                   {isProcessing ? t('detecting') : t('detectFaces')}
                 </button>
+                <div id="detect-description" className="sr-only">
+                  {t('a11y.detectButtonDescription')}
+                </div>
               </div>
             )}
 
@@ -475,16 +486,12 @@ export default function PhotoLotteryApp() {
                       <label className="text-gray-600 font-medium text-sm">
                         {t('luckyPerson')}:
                       </label>
-                      <input
-                        type="number"
-                        min="1"
-                        disabled // 先不開放調整
-                        max={detectedFaces.length}
-                        value={winnerCount}
-                        onChange={(e) => setWinnerCount(Math.max(1, Math.min(detectedFaces.length, parseInt(e.target.value) || 1)))}
-                        className="w-16 px-3 py-2 text-sm bg-gray-50 text-gray-900 border border-gray-200 rounded-xl focus:ring-2 focus:ring-gray-900 focus:border-gray-900 text-center font-medium"
+                      <div
+                        className="w-16 px-3 py-2 text-sm bg-gray-50 text-gray-900 text-center font-medium"
                         data-tour="winner-count"
-                      />
+                      >
+                        {winnerCount}
+                      </div>
                       <span className="text-gray-500 text-sm">/ {detectedFaces.length}</span>
                     </div>
                   </>
@@ -501,16 +508,12 @@ export default function PhotoLotteryApp() {
                     <label className="text-gray-600 font-medium">
                       {t('luckyPerson')}:
                     </label>
-                    <input
-                      type="number"
-                      min="1"
-                      max={detectedFaces.length}
-                      disabled // 先不開放調整
-                      value={winnerCount}
-                      onChange={(e) => setWinnerCount(Math.max(1, Math.min(detectedFaces.length, parseInt(e.target.value) || 1)))}
-                      className="w-16 px-3 py-2 bg-gray-50 text-gray-900 border border-gray-200 rounded-xl focus:ring-2 focus:ring-gray-900 focus:border-gray-900 text-center font-medium"
+                    <div
+                      className="w-16 px-3 py-2 bg-gray-50 text-gray-900 text-center font-medium"
                       data-tour="winner-count"
-                    />
+                    >
+                      {winnerCount}
+                    </div>
                     <span className="text-gray-500">/ {detectedFaces.length}</span>
                   </div>
                 )}
@@ -525,6 +528,8 @@ export default function PhotoLotteryApp() {
                   disabled={isAnimating || detectedFaces.length < 2}
                   className={`${isMobile ? 'px-6 py-3 text-sm' : 'px-8 py-4'} bg-gray-900 text-white rounded-2xl hover:bg-gray-800 transition-all duration-200 font-medium disabled:opacity-50 disabled:cursor-not-allowed`}
                   data-tour="lottery-button"
+                  aria-label={isAnimating ? t('selecting') : t('selectLucky')}
+                  aria-describedby="lottery-description"
                 >
                   {isAnimating ? (
                     <span className="animate-pulse">{t('selecting')}</span>
@@ -532,9 +537,13 @@ export default function PhotoLotteryApp() {
                     t('selectLucky')
                   )}
                 </button>
+                <div id="lottery-description" className="sr-only">
+                  {t('a11y.lotteryButtonDescription')}
+                </div>
               </div>
             )}
-          </div>
+            </article>
+          </section>
           
           {/* 上傳選項彈窗 */}
           {showUploadOptions && (
@@ -624,10 +633,8 @@ export default function PhotoLotteryApp() {
             className="hidden"
             multiple={false}
           />
-
-          </div>
-        </div>
-      </div>
+        </section>
+      </main>
       
       {/* ProductTour */}
       <ProductTour
