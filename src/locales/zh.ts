@@ -19,6 +19,8 @@ export const zh = {
     takePhoto: '拍照',
     capture: 'Capture',
     cancel: '取消',
+    dropToUpload: '放開以上傳照片',
+    clickOrDrag: '點擊選擇或拖拽照片到此處',
     
     // Face adjuster
     adjustFaces: '✏️ 調整人臉框',

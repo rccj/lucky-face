@@ -35,6 +35,32 @@ export default function FaceAdjuster({
   const [hasMoved, setHasMoved] = useState(false);
   
   const adjustImageRef = useRef<HTMLImageElement>(null);
+  const animationFrameRef = useRef<number | undefined>(undefined);
+  const pendingUpdateRef = useRef<{ faceIndex: number; box: { x: number; y: number; width: number; height: number } } | null>(null);
+  const cachedCalculationsRef = useRef<{
+    scale: number;
+    offsetX: number;
+    offsetY: number;
+    imgRect: DOMRect;
+  } | null>(null);
+
+  // 節流的狀態更新函數
+  const throttledUpdateFace = useCallback((faceIndex: number, box: { x: number; y: number; width: number; height: number }) => {
+    pendingUpdateRef.current = { faceIndex, box };
+    
+    if (!animationFrameRef.current) {
+      animationFrameRef.current = requestAnimationFrame(() => {
+        if (pendingUpdateRef.current) {
+          const { faceIndex, box } = pendingUpdateRef.current;
+          setAdjustableFaces(prev => prev.map((f, i) => 
+            i === faceIndex ? { ...f, box } : f
+          ));
+          pendingUpdateRef.current = null;
+        }
+        animationFrameRef.current = undefined;
+      });
+    }
+  }, []);
 
   // 當彈窗開啟時，初始化調整面板的人臉數據
   useEffect(() => {
@@ -70,8 +96,22 @@ export default function FaceAdjuster({
       if (selectedFaceIndex < 0 || !adjustImageRef.current) return;
 
       const imgElement = adjustImageRef.current;
-      const imgRect = imgElement.getBoundingClientRect();
       
+      // 使用緩存的計算值或重新計算
+      if (!cachedCalculationsRef.current) {
+        const imgRect = imgElement.getBoundingClientRect();
+        const scaleX = imgElement.clientWidth / imgElement.naturalWidth;
+        const scaleY = imgElement.clientHeight / imgElement.naturalHeight;
+        const scale = Math.min(scaleX, scaleY);
+        const displayWidth = imgElement.naturalWidth * scale;
+        const displayHeight = imgElement.naturalHeight * scale;
+        const offsetX = (imgElement.clientWidth - displayWidth) / 2;
+        const offsetY = (imgElement.clientHeight - displayHeight) / 2;
+        
+        cachedCalculationsRef.current = { scale, offsetX, offsetY, imgRect };
+      }
+      
+      const { scale, offsetX, offsetY, imgRect } = cachedCalculationsRef.current;
       const clientX = 'touches' in e ? e.touches[0]?.clientX || 0 : e.clientX;
       const clientY = 'touches' in e ? e.touches[0]?.clientY || 0 : e.clientY;
       
@@ -93,15 +133,6 @@ export default function FaceAdjuster({
           const mouseX = clientX - imgRect.left;
           const mouseY = clientY - imgRect.top;
           
-          const scaleX = imgElement.clientWidth / imgElement.naturalWidth;
-          const scaleY = imgElement.clientHeight / imgElement.naturalHeight;
-          const scale = Math.min(scaleX, scaleY);
-          
-          const displayWidth = imgElement.naturalWidth * scale;
-          const displayHeight = imgElement.naturalHeight * scale;
-          const offsetX = (imgElement.clientWidth - displayWidth) / 2;
-          const offsetY = (imgElement.clientHeight - displayHeight) / 2;
-          
           const naturalX = (mouseX - dragOffset.x - offsetX) / scale;
           const naturalY = (mouseY - dragOffset.y - offsetY) / scale;
           
@@ -109,11 +140,8 @@ export default function FaceAdjuster({
           const clampedX = Math.max(0, Math.min(naturalX, imgElement.naturalWidth - currentFace.box.width));
           const clampedY = Math.max(0, Math.min(naturalY, imgElement.naturalHeight - currentFace.box.height));
           
-          setAdjustableFaces(prev => prev.map((f, i) => 
-            i === selectedFaceIndex 
-              ? { ...f, box: { ...f.box, x: clampedX, y: clampedY } }
-              : f
-          ));
+          // 使用節流更新
+          throttledUpdateFace(selectedFaceIndex, { ...currentFace.box, x: clampedX, y: clampedY });
         }
       } else if (isResizing) {
         const distance = Math.sqrt(
@@ -132,15 +160,6 @@ export default function FaceAdjuster({
         
           const mouseX = clientX - imgRect.left;
           const mouseY = clientY - imgRect.top;
-          
-          const scaleX = imgElement.clientWidth / imgElement.naturalWidth;
-          const scaleY = imgElement.clientHeight / imgElement.naturalHeight;
-          const scale = Math.min(scaleX, scaleY);
-          
-          const displayWidth = imgElement.naturalWidth * scale;
-          const displayHeight = imgElement.naturalHeight * scale;
-          const offsetX = (imgElement.clientWidth - displayWidth) / 2;
-          const offsetY = (imgElement.clientHeight - displayHeight) / 2;
 
           const currentMouseX = (mouseX - offsetX) / scale;
           const currentMouseY = (mouseY - offsetY) / scale;
@@ -187,11 +206,8 @@ export default function FaceAdjuster({
           newBox.width = Math.min(newBox.width, imgElement.naturalWidth - newBox.x);
           newBox.height = Math.min(newBox.height, imgElement.naturalHeight - newBox.y);
           
-          setAdjustableFaces(prev => prev.map((f, i) => 
-            i === selectedFaceIndex 
-              ? { ...f, box: newBox }
-              : f
-          ));
+          // 使用節流更新
+          throttledUpdateFace(selectedFaceIndex, newBox);
         }
       }
     };
@@ -201,6 +217,22 @@ export default function FaceAdjuster({
       setIsResizing(false);
       setResizeHandle('');
       setHasMoved(false);
+      
+      // 清理緩存和待處理的更新
+      cachedCalculationsRef.current = null;
+      if (animationFrameRef.current) {
+        cancelAnimationFrame(animationFrameRef.current);
+        animationFrameRef.current = undefined;
+      }
+      
+      // 如果有待處理的更新，立即執行
+      if (pendingUpdateRef.current) {
+        const { faceIndex, box } = pendingUpdateRef.current;
+        setAdjustableFaces(prev => prev.map((f, i) => 
+          i === faceIndex ? { ...f, box } : f
+        ));
+        pendingUpdateRef.current = null;
+      }
       
       document.body.style.overflow = originalBodyStyle;
       document.body.style.touchAction = originalBodyTouchAction;
@@ -219,10 +251,18 @@ export default function FaceAdjuster({
       document.removeEventListener('touchmove', handleMove as EventListener);
       document.removeEventListener('touchend', handleEnd);
       
+      // 清理緩存和動畫幀
+      cachedCalculationsRef.current = null;
+      if (animationFrameRef.current) {
+        cancelAnimationFrame(animationFrameRef.current);
+        animationFrameRef.current = undefined;
+      }
+      pendingUpdateRef.current = null;
+      
       document.body.style.overflow = originalBodyStyle;
       document.body.style.touchAction = originalBodyTouchAction;
     };
-  }, [isDragging, isResizing, selectedFaceIndex, dragOffset, adjustableFaces, resizeHandle, initialBox, initialMousePos, hasMoved]);
+  }, [isDragging, isResizing, selectedFaceIndex, dragOffset, adjustableFaces, resizeHandle, initialBox, initialMousePos, hasMoved, throttledUpdateFace]);
 
   const handleAddFace = useCallback(() => {
     const newFace: DetectedFace = {
@@ -415,10 +455,10 @@ export default function FaceAdjuster({
                     style={{
                       left: `${x + width + 6}px`,
                       top: `${y - 6}px`,
-                      width: isMobile ? '16px' : '14px',
-                      height: isMobile ? '16px' : '14px',
+                      width: isMobile ? '8px' : '14px',
+                      height: isMobile ? '8px' : '14px',
                       backgroundColor: isSelected ? '#dc2626' : '#16a34a',
-                      fontSize: isMobile ? '11px' : '10px',
+                      fontSize: isMobile ? '8px' : '10px',
                       boxShadow: '0 2px 4px rgba(0, 0, 0, 0.3)',
                       fontFamily: '-apple-system, BlinkMacSystemFont, sans-serif',
                       transform: 'translate(-50%, -50%)',

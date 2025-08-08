@@ -72,31 +72,35 @@ export default function LotteryFaceModal({
         const face = currentFaces[0]; // 顯示第一個當前選中的人臉
         const box = face.box;
 
-        // 計算人臉區域，並增加一些邊距
-        const padding = Math.max(box.width, box.height) * 0.3; // 30% 邊距
+        // 計算人臉區域，並增加更多邊距以獲得更好的框取效果
+        const padding = Math.max(box.width, box.height) * 0.5; // 50% 邊距，獲得更大的照片區域
         const sourceX = Math.max(0, box.x - padding);
         const sourceY = Math.max(0, box.y - padding);
         const sourceWidth = Math.min(box.width + padding * 2, image.naturalWidth - sourceX);
         const sourceHeight = Math.min(box.height + padding * 2, image.naturalHeight - sourceY);
 
-        // 計算目標位置，保持比例並居中
-        const aspectRatio = sourceWidth / sourceHeight;
-        let destWidth, destHeight;
+        // 計算目標位置，填滿圓形區域（裁切多余部分）
+        const circleRadius = size * 0.45;
+        const circleDiameter = circleRadius * 2;
+        
+        const sourceAspectRatio = sourceWidth / sourceHeight;
+        let destWidth, destHeight, destX, destY;
 
-        if (aspectRatio > 1) {
-          // 寬度較大
-          destWidth = size * 0.9;
-          destHeight = destWidth / aspectRatio;
+        if (sourceAspectRatio > 1) {
+          // 源圖片較寬，以高度填滿圓形，寬度可能被裁切
+          destHeight = circleDiameter;
+          destWidth = destHeight * sourceAspectRatio;
+          destX = (size - destWidth) / 2;
+          destY = (size - destHeight) / 2;
         } else {
-          // 高度較大或正方形
-          destHeight = size * 0.9;
-          destWidth = destHeight * aspectRatio;
+          // 源圖片較高或正方形，以寬度填滿圓形，高度可能被裁切
+          destWidth = circleDiameter;
+          destHeight = destWidth / sourceAspectRatio;
+          destX = (size - destWidth) / 2;
+          destY = (size - destHeight) / 2;
         }
 
-        const destX = (size - destWidth) / 2;
-        const destY = (size - destHeight) / 2;
-
-        // 繪製人臉區域
+        // 繪製人臉區域，填滿整個圓形
         ctx.drawImage(
           image,
           sourceX, sourceY, sourceWidth, sourceHeight,

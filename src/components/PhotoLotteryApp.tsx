@@ -48,6 +48,7 @@ export default function PhotoLotteryApp() {
   const [showUploadOptions, setShowUploadOptions] = useState(false);
   const [isTourActive, setIsTourActive] = useState(false);
   const [showFaceAdjuster, setShowFaceAdjuster] = useState(false);
+  const [isDragOver, setIsDragOver] = useState(false);
   
   // 彈窗模態行為 - 禁用背景滾動
   useEffect(() => {
@@ -128,17 +129,26 @@ export default function PhotoLotteryApp() {
     window.addEventListener('resize', setVH);
     window.addEventListener('orientationchange', setVH);
     
+    // 防止全域拖拽行為
+    const preventDefaultDrag = (e: DragEvent) => {
+      e.preventDefault();
+    };
+    
+    document.addEventListener('dragover', preventDefaultDrag);
+    document.addEventListener('drop', preventDefaultDrag);
+    
     // 不再在頁面載入時預載模型，改為延遲載入
     
     return () => {
       window.removeEventListener('resize', setVH);
       window.removeEventListener('orientationchange', setVH);
+      document.removeEventListener('dragover', preventDefaultDrag);
+      document.removeEventListener('drop', preventDefaultDrag);
     };
   }, []);
 
-  const handleImageUpload = useCallback((event: React.ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0];
-    if (file) {
+  const processImageFile = useCallback((file: File) => {
+    if (file && file.type.startsWith('image/')) {
       const reader = new FileReader();
       reader.onload = (e) => {
         const imageData = e.target?.result as string;
@@ -149,17 +159,24 @@ export default function PhotoLotteryApp() {
           setDetectedFaces([]);
           setWinners([]);
         });
-        
-        // 延遲重置 input 值，避免閃爍
-        setTimeout(() => {
-          if (event.target) {
-            event.target.value = '';
-          }
-        }, 100);
       };
       reader.readAsDataURL(file);
     }
   }, []);
+
+  const handleImageUpload = useCallback((event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (file) {
+      processImageFile(file);
+      
+      // 延遲重置 input 值，避免閃爍
+      setTimeout(() => {
+        if (event.target) {
+          event.target.value = '';
+        }
+      }, 100);
+    }
+  }, [processImageFile]);
 
   const startCamera = useCallback(async () => {
     try {
@@ -182,6 +199,43 @@ export default function PhotoLotteryApp() {
       setIsCapturing(false); // 如果失敗，重置狀態
     }
   }, [t]);
+
+  const handleDragOver = useCallback((e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (!isDragOver) {
+      setIsDragOver(true);
+    }
+  }, [isDragOver]);
+
+  const handleDragLeave = useCallback((e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    
+    // 只有當拖拽真正離開整個區域時才設為 false
+    const rect = (e.currentTarget as HTMLElement).getBoundingClientRect();
+    const x = e.clientX;
+    const y = e.clientY;
+    
+    if (x < rect.left || x > rect.right || y < rect.top || y > rect.bottom) {
+      setIsDragOver(false);
+    }
+  }, []);
+
+  const handleDrop = useCallback((e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDragOver(false);
+    
+    if (isModelsLoading) return;
+    
+    const files = Array.from(e.dataTransfer.files);
+    const imageFile = files.find(file => file.type.startsWith('image/'));
+    
+    if (imageFile) {
+      processImageFile(imageFile);
+    }
+  }, [isModelsLoading, processImageFile]);
 
   const capturePhoto = useCallback(() => {
     const video = videoRef.current;
@@ -406,17 +460,38 @@ export default function PhotoLotteryApp() {
                       setShowUploadOptions(true);
                     }
                   }}
+                  onDragOver={handleDragOver}
+                  onDragLeave={handleDragLeave}
+                  onDrop={handleDrop}
                   className={`w-full ${isMobile ? 'h-64' : 'h-80 max-w-2xl mx-auto'} border-2 border-dashed rounded-2xl flex flex-col items-center justify-center transition-all duration-200 ${
                     isModelsLoading 
                       ? 'bg-gray-100 border-gray-300 cursor-not-allowed opacity-50' 
-                      : 'bg-gray-50 border-gray-200 cursor-pointer hover:bg-gray-100 hover:border-gray-300'
+                      : isDragOver
+                        ? 'bg-blue-50 border-blue-400 border-solid scale-105'
+                        : 'bg-gray-50 border-gray-200 cursor-pointer hover:bg-gray-100 hover:border-gray-300'
                   }`}
                 >
-                  <div className={`text-6xl mb-4 ${isModelsLoading ? 'text-gray-400' : 'text-gray-300'}`}>📷</div>
+                  <div className={`text-6xl mb-4 transition-transform ${
+                    isModelsLoading 
+                      ? 'text-gray-400' 
+                      : isDragOver 
+                        ? 'text-blue-500 scale-110' 
+                        : 'text-gray-300'
+                  }`}>
+                    {isDragOver ? '📤' : '📷'}
+                  </div>
                   {!isModelsLoading && (
                     <>
-                      <p className="text-gray-500 font-medium">{t('selectPhoto')}</p>
-                      <p className="text-gray-400 font-medium text-sm mt-2">{t('selectPhotoDesc')}</p>
+                      <p className={`font-medium transition-colors ${
+                        isDragOver ? 'text-blue-600' : 'text-gray-500'
+                      }`}>
+                        {isDragOver ? t('dropToUpload') : t('selectPhoto')}
+                      </p>
+                      {!isDragOver && (
+                        <p className="text-gray-400 font-medium text-sm mt-2">
+                          {isMobile ? t('selectPhotoDesc') : t('clickOrDrag')}
+                        </p>
+                      )}
                     </>
                   )}
                   {isModelsLoading && (

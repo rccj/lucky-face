@@ -19,6 +19,8 @@ export const en = {
     takePhoto: 'Take Photo',
     capture: 'Capture',
     cancel: 'Cancel',
+    dropToUpload: 'Drop to upload photo',
+    clickOrDrag: 'Click to select or drag photos here',
     
     // Face adjuster
     adjustFaces: '✏️ Adjust Face Boxes',
