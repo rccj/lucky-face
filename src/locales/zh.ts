@@ -54,7 +54,7 @@ export const zh = {
     // Common
     close: '關閉',
     adjust: '調整',
-    loading: '載入中...',
+    loadingText: '載入中...',
     tutorial: '教學',
     watchTutorial: '觀看教學',
 
@@ -65,6 +65,24 @@ export const zh = {
       uploadFailed: '照片上傳失敗',
       loadingAI: '正在載入 AI 模型...',
       downloadingModels: '首次使用，正在下載 AI 模型...'
+    },
+
+    // Loading messages
+    loading: {
+      mobile: '載入中...',
+      firstTimeDesktop: '首次使用需要下載 AI 模型，請稍候...',
+      firstTimeMobile: '手機版載入中...',
+      downloadingModels: '首次使用，正在下載 AI 模型...',
+      
+      // Model loading progress
+      fastModelComplete: '快速檢測模型載入完成',
+      lightModelComplete: '輕量模型載入完成', 
+      precisionModelComplete: '高精度模型載入完成',
+      loadingAIModels: '載入 AI 檢測模型...',
+      loadingAIModelsMobile: '載入 AI 模型，請稍候...',
+      allModelsComplete: '所有模型載入完成',
+      modelsComplete: '模型載入完成',
+      tryingFallback: '嘗試備用下載源...'
     },
 
     // SEO and Meta

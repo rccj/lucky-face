@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useRef, useCallback, useEffect } from 'react';
+import { useState, useRef, useCallback, useEffect, startTransition } from 'react';
 import { useTranslation } from 'react-i18next';
 import { isMobile } from 'react-device-detect';
 import Image from 'next/image';
@@ -25,6 +25,7 @@ export default function PhotoLotteryApp() {
   const [currentAnimatingFaces, setCurrentAnimatingFaces] = useState<DetectedFace[]>([]);
   const [showLotteryModal, setShowLotteryModal] = useState(false);
   const [isModelsLoading, setIsModelsLoading] = useState(false);
+  const [modelProgress, setModelProgress] = useState<{loaded: number; total: number; message: string} | null>(null);
   const [isCapturing, setIsCapturing] = useState(false);
   
   
@@ -140,13 +141,21 @@ export default function PhotoLotteryApp() {
     if (file) {
       const reader = new FileReader();
       reader.onload = (e) => {
-        setSelectedImage(e.target?.result as string);
-        setDetectedFaces([]);
-        setWinners([]);
-        // 重置 input 值，讓用戶可以重新選擇同一個文件
-        if (event.target) {
-          event.target.value = '';
-        }
+        const imageData = e.target?.result as string;
+        
+        // 使用 startTransition 批量更新狀態，減少閃爍
+        startTransition(() => {
+          setSelectedImage(imageData);
+          setDetectedFaces([]);
+          setWinners([]);
+        });
+        
+        // 延遲重置 input 值，避免閃爍
+        setTimeout(() => {
+          if (event.target) {
+            event.target.value = '';
+          }
+        }, 100);
       };
       reader.readAsDataURL(file);
     }
@@ -224,9 +233,9 @@ export default function PhotoLotteryApp() {
     
     setIsProcessing(true);
     
-    // 檢查是否需要顯示模型載入訊息
+    // 檢查是否需要顯示模型載入訊息（避免重複檢查）
     const needsToLoadModels = !faceapi.nets.tinyFaceDetector.params || !faceapi.nets.ssdMobilenetv1.params;
-    if (needsToLoadModels) {
+    if (needsToLoadModels && !isModelsLoading) {
       setIsModelsLoading(true);
     }
     
@@ -235,8 +244,11 @@ export default function PhotoLotteryApp() {
     
     try {
       // 延遲載入模型 - 只有在用戶點擊偵測時才載入
-      await loadFaceApiModels();
+      await loadFaceApiModels((progress) => {
+        setModelProgress(progress);
+      }, t);
       setIsModelsLoading(false);
+      setModelProgress(null);
       
       const faces = await detectFaces(imageRef.current);
       
@@ -270,6 +282,7 @@ export default function PhotoLotteryApp() {
       
       // 先完成 UI 更新
       setIsModelsLoading(false);
+      setModelProgress(null);
       setIsProcessing(false);
       
       // 顯示友好的錯誤訊息
@@ -280,7 +293,7 @@ export default function PhotoLotteryApp() {
       // 如果是真的錯誤，也嘗試打開手動調整
       setShowFaceAdjuster(true);
     }
-  }, [selectedImage, updateCanvasSize, t]);
+  }, [selectedImage, updateCanvasSize, t, isModelsLoading]);
 
   const handleStartLottery = useCallback(() => {
     if (detectedFaces.length < 2) {
@@ -386,7 +399,6 @@ export default function PhotoLotteryApp() {
                     if (isMobile) {
                       // 手機直接呼叫相片選擇
                       if (fileInputRef.current) {
-                        fileInputRef.current.value = '';
                         fileInputRef.current.click();
                       }
                     } else {
@@ -410,8 +422,27 @@ export default function PhotoLotteryApp() {
                   {isModelsLoading && (
                     <div className="flex flex-col items-center">
                       <div className="w-8 h-8 border-3 border-purple-200 border-t-purple-600 rounded-full animate-spin mb-3"></div>
-                      <p className="text-gray-600 font-medium text-sm mb-1">{t('error.downloadingModels')}</p>
-                      <p className="text-gray-400 text-xs">首次使用需要下載 AI 模型，請稍候...</p>
+                      <p className="text-gray-600 font-medium text-sm mb-1">
+                        {modelProgress?.message || t('error.downloadingModels')}
+                      </p>
+                      {modelProgress && (
+                        <>
+                          <div className="w-24 h-1.5 bg-gray-200 rounded-full overflow-hidden mb-2">
+                            <div 
+                              className="h-full bg-purple-600 rounded-full transition-all duration-300"
+                              style={{ width: `${(modelProgress.loaded / modelProgress.total) * 100}%` }}
+                            />
+                          </div>
+                          <p className="text-gray-400 text-xs">
+                            {isMobile ? t('loading.firstTimeMobile') : t('loading.firstTimeDesktop')}
+                          </p>
+                        </>
+                      )}
+                      {!modelProgress && (
+                        <p className="text-gray-400 text-xs">
+                          {isMobile ? t('loading.firstTimeMobile') : t('loading.firstTimeDesktop')}
+                        </p>
+                      )}
                     </div>
                   )}
                 </div>
@@ -578,9 +609,6 @@ export default function PhotoLotteryApp() {
                   
                   <button
                     onClick={() => {
-                      if (fileInputRef.current) {
-                        fileInputRef.current.value = '';
-                      }
                       fileInputRef.current?.click();
                       setShowUploadOptions(false);
                     }}

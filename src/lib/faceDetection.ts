@@ -16,10 +16,14 @@ let modelsLoaded = false;
 
 // 檢查模型是否已經載入到記憶體中
 function checkModelsLoaded(): boolean {
+  // 所有平台都需要兩個模型以確保檢測準確度
   return !!(faceapi.nets.tinyFaceDetector.params && faceapi.nets.ssdMobilenetv1.params);
 }
 
-export async function loadFaceApiModels(): Promise<void> {
+export async function loadFaceApiModels(
+  onProgress?: (progress: { loaded: number; total: number; message: string }) => void,
+  t?: (key: string) => string
+): Promise<void> {
   // 先檢查模型是否已經在記憶體中
   if (modelsLoaded || checkModelsLoaded()) {
     modelsLoaded = true;
@@ -37,15 +41,55 @@ export async function loadFaceApiModels(): Promise<void> {
   
   const modelUrl = getCdnUrl();
   
+  // 所有平台都載入完整模型以確保檢測準確度
+  const totalModels = 2;
+  let loadedModels = 0;
+  
+  const updateProgress = (message: string) => {
+    onProgress?.({ loaded: loadedModels, total: totalModels, message });
+  };
+  
   try {
-    // 先載入 TinyFaceDetector (較小)
+    // 優化：並行載入兩個模型以提升速度
+    const loadingPromises: Promise<void>[] = [];
+    
+    // 載入 TinyFaceDetector (較小，快速)
     if (!faceapi.nets.tinyFaceDetector.params) {
-      await faceapi.nets.tinyFaceDetector.loadFromUri(modelUrl);
+      loadingPromises.push(
+        faceapi.nets.tinyFaceDetector.loadFromUri(modelUrl).then(() => {
+          loadedModels++;
+          updateProgress(isMobile ? 
+            (t?.('loading.lightModelComplete') || '輕量模型載入完成') : 
+            (t?.('loading.fastModelComplete') || '快速檢測模型載入完成')
+          );
+        })
+      );
+    } else {
+      loadedModels++;
     }
     
-    // 再載入 SSD MobileNetv1 (較大)
+    // 載入高精度 SSD MobileNetv1 模型  
     if (!faceapi.nets.ssdMobilenetv1.params) {
-      await faceapi.nets.ssdMobilenetv1.loadFromUri(modelUrl);
+      loadingPromises.push(
+        faceapi.nets.ssdMobilenetv1.loadFromUri(modelUrl).then(() => {
+          loadedModels++;
+          updateProgress(t?.('loading.precisionModelComplete') || '高精度模型載入完成');
+        })
+      );
+    } else {
+      loadedModels++;
+    }
+    
+    // 顯示初始載入訊息
+    if (loadingPromises.length > 0) {
+      updateProgress(isMobile ? 
+        (t?.('loading.loadingAIModelsMobile') || '載入 AI 模型，請稍候...') : 
+        (t?.('loading.loadingAIModels') || '載入 AI 檢測模型...')
+      );
+      
+      // 等待所有模型載入完成
+      await Promise.all(loadingPromises);
+      updateProgress(t?.('loading.allModelsComplete') || '所有模型載入完成');
     }
     
     modelsLoaded = true;
@@ -53,12 +97,15 @@ export async function loadFaceApiModels(): Promise<void> {
     console.error(`Failed to load face detection models from ${modelUrl}:`, error);
     
     // 如果是生產環境且使用 CDN 失敗，嘗試備用方案
-    if (process.env.NODE_ENV === 'production' && modelUrl.includes('cdn.jsdelivr.net')) {
+    if (process.env.NODE_ENV === 'production' && modelUrl.includes('jsdelivr.net')) {
       try {
         const fallbackUrl = 'https://raw.githubusercontent.com/justadudewhohacks/face-api.js/master/weights';
+        updateProgress(t?.('loading.tryingFallback') || '嘗試備用下載源...');
+        
         await faceapi.nets.tinyFaceDetector.loadFromUri(fallbackUrl);
         await faceapi.nets.ssdMobilenetv1.loadFromUri(fallbackUrl);
         modelsLoaded = true;
+        updateProgress(t?.('loading.modelsComplete') || '模型載入完成');
         return;
       } catch (fallbackError) {
         console.error('Fallback CDN also failed:', fallbackError);
@@ -211,7 +258,7 @@ export async function detectFaces(imageElement: HTMLImageElement): Promise<Detec
       if (detections.length >= 5) {
         break;
       }
-    } catch (error) {
+    } catch {
       continue;
     }
   }

@@ -54,7 +54,7 @@ export const en = {
     // Common
     close: 'Close',
     adjust: 'Adjust',
-    loading: 'Loading...',
+    loadingText: 'Loading...',
     tutorial: 'Tutorial',
     watchTutorial: 'Watch Tutorial',
 
@@ -65,6 +65,24 @@ export const en = {
       uploadFailed: 'Photo upload failed',
       loadingAI: 'Loading AI models...',
       downloadingModels: 'First time use, downloading AI models...'
+    },
+
+    // Loading messages
+    loading: {
+      mobile: 'Loading...',
+      firstTimeDesktop: 'First time use requires downloading AI models, please wait...',
+      firstTimeMobile: 'Mobile version loading...',
+      downloadingModels: 'First time use, downloading AI models...',
+      
+      // Model loading progress
+      fastModelComplete: 'Fast detection model loaded',
+      lightModelComplete: 'Light model loaded',
+      precisionModelComplete: 'Precision model loaded',
+      loadingAIModels: 'Loading AI detection models...',
+      loadingAIModelsMobile: 'Loading AI models, please wait...',
+      allModelsComplete: 'All models loaded',
+      modelsComplete: 'Models loaded',
+      tryingFallback: 'Trying backup download source...'
     },
 
     // SEO and Meta

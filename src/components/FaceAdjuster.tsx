@@ -374,7 +374,7 @@ export default function FaceAdjuster({
                     ].map((corner) => (
                       <div 
                         key={corner.position}
-                        className={`absolute ${isMobile ? 'w-3 h-3' : 'w-2 h-2'} rounded-full cursor-${corner.cursor}`}
+                        className={`absolute ${isMobile ? 'w-1 h-1' : 'w-2 h-2'} rounded-full cursor-${corner.cursor}`}
                         style={{ 
                           ...corner.style,
                           backgroundColor: isSelected ? '#dc2626' : '#16a34a',
