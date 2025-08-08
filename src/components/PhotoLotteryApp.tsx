@@ -552,9 +552,9 @@ export default function PhotoLotteryApp() {
                       setDetectedFaces([]);
                       setWinners([]);
                     }}
-                    className="absolute top-3 right-3 w-10 h-10 bg-white bg-opacity-90 backdrop-blur-sm text-gray-700 rounded-full flex items-center justify-center hover:bg-opacity-100 hover:text-gray-900 transition-all duration-200 shadow-lg border border-gray-200"
+                    className="absolute top-3 right-3 w-8 h-8 bg-gray-100/80 text-gray-500 rounded-full flex items-center justify-center hover:bg-gray-200/90 hover:text-gray-700 transition-all duration-300 shadow-sm border border-gray-200/50 hover:border-gray-300/70 opacity-70 hover:opacity-100"
                   >
-                    <XMarkIcon className="w-5 h-5" />
+                    <XMarkIcon className="w-4 h-4"/>
                   </button>
                 </div>
               )}
